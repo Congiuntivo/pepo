@@ -3,7 +3,7 @@ CC = gcc
 CFLAGS = -Wall -Wextra -std=c99 -lm
 
 # Targets and sources
-TARGET = epo
+TARGET = epo.out
 SOURCES = main.c epo.c space.c agent.c utils.c
 HEADERS = epo.h space.h agent.h utils.h
 
