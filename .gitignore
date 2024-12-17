@@ -1,1 +1,5 @@
+# Binaries for programs and plugins
 *.out
+
+# Object files
+*.o
