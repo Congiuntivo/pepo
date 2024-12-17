@@ -8,9 +8,10 @@
 #include "utils.h"
 #include "csv.h"
 
-
 // Example fitness function: Sphere function
 double sphere_function(double *position, int n_variables);
+
+void log_population(Space *space, FILE *file, double temperature_profile, int iteration);
 
 // Read command line arguments
 void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M);
@@ -22,15 +23,15 @@ int main(int argc, char *argv[])
 
     // Read command line arguments
     read_cli(argc, argv, &n_agents, &n_variables, &n_iterations, &lower_bound, &upper_bound, &f, &l, &R, &M);
-    
-    srand(time(NULL)); // Set random seed
 
+    srand(time(NULL)); // Set random seed
 
     // Create CSV file
     const char *field_names[] = {"Iteration", "Fitness", "Position", "TempP"};
     FILE *file = csv_open("output.csv", field_names, 4);
 
-    if (!file) {
+    if (!file)
+    {
         fprintf(stderr, "Failed to create output.csv\n");
         return EXIT_FAILURE;
     }
@@ -49,27 +50,59 @@ int main(int argc, char *argv[])
         // Update fitness and find the best agent
         update_best_agent(&space, sphere_function);
 
-
         // Write to CSV file: iteration and best fitness
-        const char *row_values[4];
-        char iteration_str[12];
-        char fitness_str[50];
-        char position_str[200];
-        char tempP_str[50];
+        log_population(&space, file, temperature_profile(&epo), iteration);
 
-        snprintf(iteration_str, sizeof(iteration_str), "%d", iteration);
-        snprintf(fitness_str, sizeof(fitness_str), "%.6f", space.best_agent.fitness);
-        for (int i = 0; i < n_variables; i++)
+        // Perform EPO update
+        epo_update(&epo, &space);
+
+        // Print progress
+        printf("Iteration %d: Best Fitness = %.6f\n", iteration, space.best_agent.fitness);
+        for (int i = 0; i < n_agents; i++)
         {
-            snprintf(position_str, sizeof(position_str), "%s%.6f", position_str, space.best_agent.position[i]);
-            if (i < n_variables - 1)
+            printf("\tAgent %d: Fitness = %.6f\n", i, space.agents[i].fitness);
+            for (int j = 0; j < n_variables; j++)
             {
-                snprintf(position_str, sizeof(position_str), "%s-", position_str);
+                printf("\t\tPosition %d: %.6f\n", j, space.agents[i].position[j]);
             }
         }
-        snprintf(tempP_str, sizeof(tempP_str), "%.6f", temperature_profile(&epo));
+    }
 
+    // Free allocated memory
+    free_space(&space);
 
+    return 0;
+}
+
+void log_population(Space *space, FILE *file, double temperature_profile, int iteration)
+{
+    const char *row_values[4];
+    char iteration_str[12];
+    char fitness_str[50];
+    char position_str[200];
+    char tempP_str[50];
+
+    snprintf(iteration_str, sizeof(iteration_str), "%d", iteration);
+    snprintf(tempP_str, sizeof(tempP_str), "%.6f", temperature_profile);
+
+    for (int i = 0; i < space->n_agents; i++)
+    {
+        snprintf(fitness_str, sizeof(fitness_str), "%.6f", space->agents[i].fitness);
+        char temp[50];          // Temporary buffer for individual values
+        position_str[0] = '\0'; // Initialize the string to be empty
+
+        for (int j = 0; j < space->n_variables; j++)
+        {
+            // Append the current value
+            snprintf(temp, sizeof(temp), "%.6f", space->agents[i].position[j]);
+            strncat(position_str, temp, sizeof(position_str) - strlen(position_str) - 1);
+
+            // Append an underscore if it's not the last variable
+            if (j < space->n_variables - 1)
+            {
+                strncat(position_str, "_", sizeof(position_str) - strlen(position_str) - 1);
+            }
+        }
 
         row_values[0] = iteration_str;
         row_values[1] = fitness_str;
@@ -77,19 +110,7 @@ int main(int argc, char *argv[])
         row_values[3] = tempP_str;
 
         csv_write_row(file, row_values, 4);
-
-
-        // Perform EPO update
-        epo_update(&epo, &space);
-
-        // Print progress
-        printf("Iteration %d: Best Fitness = %.6f\n", iteration, space.best_agent.fitness);
     }
-
-    // Free allocated memory
-    free_space(&space);
-
-    return 0;
 }
 
 // Example fitness function: Sphere function

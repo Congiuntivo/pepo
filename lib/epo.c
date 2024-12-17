@@ -15,7 +15,7 @@ void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr)
     epo->l = l;
     epo->M = M;
     epo->R = R;
-    epo->itr = 0;
+    epo->itr = 1;
     epo->max_itr = max_itr;
 }
 
