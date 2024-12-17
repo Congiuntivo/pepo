@@ -6,6 +6,8 @@
 #include "space.h"
 #include "epo.h"
 #include "utils.h"
+#include "csv.h"
+
 
 // Example fitness function: Sphere function
 double sphere_function(double *position, int n_variables);
@@ -24,6 +26,14 @@ int main(int argc, char *argv[])
     srand(time(NULL)); // Set random seed
 
 
+    // Create CSV file
+    const char *field_names[] = {"Iteration", "Fitness", "Position", "TempP"};
+    FILE *file = csv_open("output.csv", field_names, 4);
+
+    if (!file) {
+        fprintf(stderr, "Failed to create output.csv\n");
+        return EXIT_FAILURE;
+    }
 
     // Initialize search space
     Space space;
@@ -38,6 +48,36 @@ int main(int argc, char *argv[])
     {
         // Update fitness and find the best agent
         update_best_agent(&space, sphere_function);
+
+
+        // Write to CSV file: iteration and best fitness
+        const char *row_values[4];
+        char iteration_str[12];
+        char fitness_str[50];
+        char position_str[200];
+        char tempP_str[50];
+
+        snprintf(iteration_str, sizeof(iteration_str), "%d", iteration);
+        snprintf(fitness_str, sizeof(fitness_str), "%.6f", space.best_agent.fitness);
+        for (int i = 0; i < n_variables; i++)
+        {
+            snprintf(position_str, sizeof(position_str), "%s%.6f", position_str, space.best_agent.position[i]);
+            if (i < n_variables - 1)
+            {
+                snprintf(position_str, sizeof(position_str), "%s-", position_str);
+            }
+        }
+        snprintf(tempP_str, sizeof(tempP_str), "%.6f", temperature_profile(&epo));
+
+
+
+        row_values[0] = iteration_str;
+        row_values[1] = fitness_str;
+        row_values[2] = position_str;
+        row_values[3] = tempP_str;
+
+        csv_write_row(file, row_values, 4);
+
 
         // Perform EPO update
         epo_update(&epo, &space);
@@ -68,9 +108,9 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
     // Set default values
     *n_agents = 80;
     *n_variables = 3;
-    *n_iterations = 1000;
-    *lower_bound = -1000.0;
-    *upper_bound = 1000.0;
+    *n_iterations = 100;
+    *lower_bound = -100.0;
+    *upper_bound = 100.0;
     *f = 2.0; // Exploration control parameter
     *l = 1.5; // Exploitation control parameter
     *R = 0.5; // Huddle radius
@@ -99,23 +139,24 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
     int i = 1;
     while (i < argc - 1)
     {
-        if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--penguins"))
+        if (strcmp(argv[i], "-p") == 0 || strcmp(argv[i], "--penguins") == 0)
         {
             *n_agents = atoi(argv[i + 1]);
         }
-        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--variables"))
+        else if (strcmp(argv[i], "-v") == 0 || strcmp(argv[i], "--variables") == 0)
         {
             *n_variables = atoi(argv[i + 1]);
         }
-        else if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--iterations"))
+        else if (strcmp(argv[i], "-i") == 0 || strcmp(argv[i], "--iterations") == 0)
         {
+            printf("Found iterations\n");
             *n_iterations = atoi(argv[i + 1]);
         }
-        else if (strcmp(argv[i], "-lb") == 0 || strcmp(argv[i], "--lower_bound"))
+        else if (strcmp(argv[i], "-lb") == 0 || strcmp(argv[i], "--lower_bound") == 0)
         {
             *lower_bound = atof(argv[i + 1]);
         }
-        else if (strcmp(argv[i], "-ub") == 0 || strcmp(argv[i], "--upper_bound"))
+        else if (strcmp(argv[i], "-ub") == 0 || strcmp(argv[i], "--upper_bound") == 0)
         {
             *upper_bound = atof(argv[i + 1]);
         }
@@ -127,7 +168,7 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
         {
             *l = atof(argv[i + 1]);
         }
-        else if (strcmp(argv[i], "-R") == 0 || strcmp(argv[i], "--radius"))
+        else if (strcmp(argv[i], "-R") == 0 || strcmp(argv[i], "--radius") == 0)
         {
             *R = atof(argv[i + 1]);
         }

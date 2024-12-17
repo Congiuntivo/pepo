@@ -8,7 +8,7 @@ TARGET = epo.out
 
 # Source files
 MAIN = main.c
-LIB_SRC = lib/agent.c lib/utils.c lib/space.c lib/epo.c
+LIB_SRC = lib/agent.c lib/utils.c lib/space.c lib/epo.c lib/csv.c
 SOURCES = $(MAIN) $(LIB_SRC)
 
 # Object files

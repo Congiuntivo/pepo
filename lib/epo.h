@@ -17,6 +17,8 @@ typedef struct
 // Function to initialize the EPO structure
 void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr);
 
+double temperature_profile(EPO *epo);
+
 // Function to update the space using the EPO algorithm
 void epo_update(EPO *epo, Space *space);
 

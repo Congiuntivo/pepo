@@ -3,3 +3,7 @@
 
 # Object files
 *.o
+
+*.csv
+
+.vscode

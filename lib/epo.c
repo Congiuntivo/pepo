@@ -19,6 +19,14 @@ void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr)
     epo->max_itr = max_itr;
 }
 
+double temperature_profile(EPO *epo)
+{
+    // Calculate the temperature profile according to Eq. 7
+    double T = (epo->R > 1) ? 0 : 1;
+    double T_p = T - ((double)epo->max_itr / epo->itr);
+    return T_p;
+}
+
 // EPO algorithm update: Updates agents' positions in the search space
 void epo_update(EPO *epo, Space *space)
 {
@@ -26,8 +34,7 @@ void epo_update(EPO *epo, Space *space)
     {
 
         // Temperature profile (Eq. 7)
-        double T = (epo->R > 1) ? 0 : 1;
-        double T_p = T - ((double)epo->max_itr / (epo->itr - epo->max_itr));
+        double T_p = temperature_profile(epo);
 
         // Polygon grid accuracy (Eq. 10)
         double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
