@@ -61,7 +61,8 @@ void epo_update(EPO *epo, Space *space)
         for (int j = 0; j < space->n_variables; j++)
         {
             double C = random_double(0, 1);
-            D_ep[j] = fabs(S * space->best_agent.position[j] - P_grid[j] * C);
+            D_ep[j] = fabs(S * space->best_agent.position[j] - space->agents[current_peng].position[j] * C);
+            printf("%f ", D_ep[j]);
         }
 
         // Update position (Eq. 13)
