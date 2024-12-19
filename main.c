@@ -57,17 +57,6 @@ int main(int argc, char *argv[])
 
         // Perform EPO update
         epo_update(&epo, &space);
-
-        // Print progress
-        printf("Iteration %d: Best Fitness = %.6f\n", iteration, space.best_agent.fitness);
-        for (int i = 0; i < n_agents; i++)
-        {
-            printf("\tAgent %d: Fitness = %.6f\n", i, space.agents[i].fitness);
-            for (int j = 0; j < n_variables; j++)
-            {
-                printf("\t\tPosition %d: %.6f\n", j, space.agents[i].position[j]);
-            }
-        }
     }
 
     // Free allocated memory
