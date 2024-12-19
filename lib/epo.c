@@ -23,7 +23,7 @@ double temperature_profile(EPO *epo)
 {
     // Calculate the temperature profile according to Eq. 7
     double T = (epo->R > 1) ? 0 : 1;
-    double T_p = T - ((double)epo->max_itr / epo->itr);
+    double T_p = T - ((double)epo->max_itr / epo->itr - epo->max_itr);
     return T_p;
 }
 
