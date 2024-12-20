@@ -15,7 +15,7 @@ void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr)
     epo->l = l;
     epo->M = M;
     epo->R = R;
-    epo->itr = 1;
+    epo->itr = 0;
     epo->max_itr = max_itr;
 }
 
@@ -30,18 +30,17 @@ double temperature_profile(EPO *epo)
 // EPO algorithm update: Updates agents' positions in the search space
 void epo_update(EPO *epo, Space *space)
 {
+    // Temperature profile (Eq. 7)
+    double T_p = temperature_profile(epo);
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
-        // Temperature profile (Eq. 7)
-        double T_p = temperature_profile(epo);
-
         // Polygon grid accuracy (Eq. 10)
         double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
         for (int j = 0; j < space->n_variables; j++)
         {
             P_grid[j] = fabs(space->best_agent.position[j] - space->agents[current_peng].position[j]);
         }
-        
+
         // DEBUG: Print the P_grid
         printf("P_grid:\n\t");
         for (int j = 0; j < space->n_variables; j++)
@@ -56,7 +55,7 @@ void epo_update(EPO *epo, Space *space)
         double rand_num = random_double(0, 1);
         for (int j = 0; j < space->n_variables; j++)
         {
-            A[j] = epo->M * (T_p + P_grid[j]) * rand_num  - T_p;
+            A[j] = epo->M * (T_p + P_grid[j]) * rand_num - T_p;
         }
 
         // DEBUG: Print A vector
@@ -71,7 +70,7 @@ void epo_update(EPO *epo, Space *space)
         // Social forces (Eq. 12)
         // TODO: Check if f & l need to be randomized
         double S = social_force(epo);
-        
+
         // DEBUG: Print the social force
         printf("S: %f\n", S);
 
@@ -80,7 +79,7 @@ void epo_update(EPO *epo, Space *space)
         for (int j = 0; j < space->n_variables; j++)
         {
             double C = random_double(0, 1);
-            D_ep[j] = fabs(S * space->best_agent.position[j] - space->agents[current_peng].position[j] * C);
+            D_ep[j] = fabs((S * space->best_agent.position[j]) - (space->agents[current_peng].position[j] * C));
             printf("%f ", D_ep[j]);
         }
 
@@ -107,12 +106,12 @@ void epo_update(EPO *epo, Space *space)
         {
             double update = A[j] * D_ep[j];
             space->agents[current_peng].position[j] = space->best_agent.position[j] - update;
-            
+
             // DEBUG: Print the update
             printf("%f ", update);
             // END DEBUG
 
-            // Clamp position to bounds 
+            // Clamp position to bounds
             if (space->agents[current_peng].position[j] < space->lower_bound)
             {
                 space->agents[current_peng].position[j] = space->lower_bound;
@@ -132,7 +131,6 @@ void epo_update(EPO *epo, Space *space)
         printf("\n\n");
         // END DEBUG
 
-
         // TODO: Free once and malloc once
         // Free temporary arrays
         free(P_grid);
@@ -141,7 +139,6 @@ void epo_update(EPO *epo, Space *space)
     }
     epo->itr++;
 }
-
 
 double social_force(EPO *epo)
 {
