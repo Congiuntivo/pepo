@@ -23,7 +23,6 @@ void init_space(Space *space, int n_agents, int n_variables, double lower_bound,
 
     // Initialize the best agent
     init_agent(&space->best_agent, n_variables, lower_bound, upper_bound);
-    space->best_agent.fitness = INFINITY; // Set initial fitness to infinity
 }
 
 // Free memory allocated for the search space
