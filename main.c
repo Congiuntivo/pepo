@@ -59,6 +59,9 @@ int main(int argc, char *argv[])
         epo_update(&epo, &space);
     }
 
+    printf("Best agent found:\n");
+    printf("Fitness: %.6f\n", space.best_agent.fitness);
+
     // Free allocated memory
     free_space(&space);
 
@@ -95,6 +98,16 @@ void log_population(Space *space, FILE *file, double temperature_profile, int it
         // Write to CSV file
         csv_write_row(file, row_values, 4);
     }
+
+    // Write the best agent to the CSV file
+    char fitness_str[FITNESS_STR_SIZE];
+    snprintf(fitness_str, sizeof(fitness_str), "%.6f", space->best_agent.fitness);
+
+    char position_str[POSITION_STR_SIZE];
+    format_position_string(position_str, sizeof(position_str), space->best_agent.position, space->n_variables);
+
+    const char *row_values[4] = {iteration_str, fitness_str, position_str, tempP_str};
+    csv_write_row(file, row_values, 4);
 }
 
 // Helper function to format the positions of the agents into a single string
