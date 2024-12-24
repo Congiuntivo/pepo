@@ -33,6 +33,9 @@ void epo_update(EPO *epo, Space *space)
 {
     // Temperature profile (Eq. 7)
     double T_p = temperature_profile(epo);
+
+    // Random number between 0 and 1
+    double rand_num = random_double(0, 1);
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
         // Polygon grid accuracy (Eq. 10)
@@ -53,7 +56,6 @@ void epo_update(EPO *epo, Space *space)
 
         // Avoidance coefficient (Eq. 9)
         double *A = (double *)malloc(space->n_variables * sizeof(double));
-        double rand_num = random_double(0, 1);
         for (int j = 0; j < space->n_variables; j++)
         {
             A[j] = epo->M * (T_p + P_grid[j]) * rand_num - T_p;
