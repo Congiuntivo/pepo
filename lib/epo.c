@@ -36,6 +36,11 @@ void epo_update(EPO *epo, Space *space)
 
     // Random number between 0 and 1
     double rand_num = random_double(0, 1);
+    
+    // Social forces (Eq. 12)
+    // TODO: Check if f & l need to be randomized
+    double S = social_force(epo);
+
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
         // Polygon grid accuracy (Eq. 10)
@@ -69,10 +74,6 @@ void epo_update(EPO *epo, Space *space)
         }
         printf("\n");
         // END DEBUG
-
-        // Social forces (Eq. 12)
-        // TODO: Check if f & l need to be randomized
-        double S = social_force(epo);
 
         // DEBUG: Print the social force
         printf("S: %f\n", S);
