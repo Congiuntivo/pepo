@@ -1,0 +1,44 @@
+\documentclass[a4paper,12pt]{article}  % Basic document class - can use another class if required
+
+% Packages
+\usepackage[utf8]{inputenc}             % For UTF-8 encoding
+\usepackage[T1]{fontenc}               % For proper font encoding
+\usepackage{graphicx}                  % For inserting images
+\usepackage{amsmath, amssymb}          % For math symbols
+\usepackage{xcolor}                    % For colors
+\usepackage{geometry}                  % For page margins
+\geometry{margin=1in}                  % Set 1-inch margins
+\usepackage{hyperref}                  % For clickable links
+\usepackage{biblatex}                  % For bibliography management
+\addbibresource{report.bib}        % Bibliography file
+
+
+% Begin the document
+\begin{document}
+
+\input{titlepage.tex}  % Include the title page
+
+% Sections of the report
+\section{Abstract}
+Write your abstract here. A brief summary of the project. \cite{einstein1905}
+
+\section{Introduction}
+Introduce the background, motivation, and objectives of the project.
+
+\section{Methodology}
+Describe your methodology in detail. Explain how you approached the problem.
+
+\section{Results}
+Present the results of your project. This could include text, figures, tables, or any other relevant information.
+
+\section{Discussion}
+Interpret your results and discuss their significance.
+
+\section{Conclusion}
+Summarize your findings. Suggest future work or improvements that could be made.
+
+\section*{References}  % Section without a number
+\printbibliography    % Bibliography is printed here
+
+% End the document
+\end{document}

@@ -11,3 +11,13 @@
 .venv
 
 *.gif
+
+# Latex
+*.aux
+*.bbl
+*.blg
+*.bcf
+*.log
+*.pdf
+*.run.xml
+*.synctex.gz
