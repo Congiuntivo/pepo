@@ -1,0 +1,57 @@
+\section{Methodology}
+
+\subsection{Overview of the Emperor Penguin Optimizer Algorithm}
+
+\begin{algorithm}[H]
+    \caption{Emperor Penguin Optimizer (EPO)}
+    \label{alg:epo}
+    \begin{algorithmic}[1]
+    \Require Objective function $f(\mathbf{x})$, population size $N$, maximum iterations $Max_{\text{iter}}$, huddle radius $R$, movement parameters $M$, exploration parameters $f$, exploitation parameters $l$
+    
+    \State Initialize population of penguins $\vec{P_i}$ $(i = 1, 2, \dots, N)$ randomly
+
+    \State $\vec{P_{\text{best}}} \gets \underset{i}{\arg\min} f(\vec{P_i})$ \Comment{Initialize the best solution}
+    
+    \While {$itr < Max_{\text{iter}}$}
+        \State $R \gets Rand(0, 1)$ \Comment{Random number in the range $[0, 1]$}
+        
+        \If {$R > 1$}
+            \State $T \gets 0$
+        \Else
+            \State $T \gets 1$
+        \EndIf
+
+        \State $T' \gets (T - \frac{Max_{\text{iter}}}{itr - Max_{\text{iter}}})$ \Comment{Compute the temperature profile}
+
+        \State $S \gets \Bigl(\sqrt{f\cdot\exp^{-itr/l}-\exp{-itr}}\Bigr)^2$ \Comment{Compute the social force}
+
+        \For {$i = 1$ to $N$}
+            \State $\vec{C} \gets Rand(0, 1)$ \Comment{Generate the avoidance vector}
+            
+            \State $\vec{A} \gets (M \cdot (T' + |\vec{P_{\text{best}}} - \vec{P_i}|)) \cdot R - T'$ \Comment{Compute the movement vector}
+
+            \State $\vec{D} \gets |S \cdot \vec{P_i} - \vec{C} \cdot \vec{P_{\text{best}}}|$ \Comment{Compute the distance vector}
+
+            \State $\vec{P_i} \gets \vec{P_{\text{best}}} - \vec{A} \cdot \vec{D}$ \Comment{Update the position of the penguin}
+            \State Clamp $\vec{P_i}$ to the search space bounds
+        \EndFor
+
+        \If {$\underset{i}{\min} f(\vec{P_i}) < f(\vec{P_{\text{best}}})$} \Comment{If a better solution is found}
+
+            \State $\vec{P_{\text{best}}} \gets \underset{i}{\arg\min} f(\vec{P_i})$ \Comment{Update the best solution}
+        \EndIf
+
+        \State $i \gets i + 1$
+    \EndWhile
+  
+    \State \Return $\vec{P_{\text{best}}}$
+
+    \end{algorithmic}
+\end{algorithm}
+
+\subsection{Our Implementation}
+
+
+\subsection{Parallelization Strategies}
+
+

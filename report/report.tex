@@ -10,6 +10,10 @@
 \geometry{margin=1in}                  % Set 1-inch margins
 \usepackage{hyperref}                  % For clickable links
 \usepackage{biblatex}                  % For bibliography management
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+
+
 \addbibresource{report.bib}        % Bibliography file
 
 
@@ -25,8 +29,7 @@ Write your abstract here. A brief summary of the project. \cite{einstein1905}
 \section{Introduction}
 Introduce the background, motivation, and objectives of the project.
 
-\section{Methodology}
-Describe your methodology in detail. Explain how you approached the problem.
+\input{sections/metodology.tex}
 
 \section{Results}
 Present the results of your project. This could include text, figures, tables, or any other relevant information.
