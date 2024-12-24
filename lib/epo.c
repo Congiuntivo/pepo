@@ -9,7 +9,7 @@
 double social_force(EPO *epo);
 
 // Initialize the EPO structure with given parameters
-void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr)
+void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr, double scale)
 {
     epo->f = f;
     epo->l = l;
@@ -17,6 +17,7 @@ void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr)
     epo->R = R;
     epo->itr = 0;
     epo->max_itr = max_itr;
+    epo->scale = scale;
 }
 
 double temperature_profile(EPO *epo)
@@ -80,7 +81,6 @@ void epo_update(EPO *epo, Space *space)
         {
             double C = random_double(0, 1);
             D_ep[j] = fabs((S * space->best_agent.position[j]) - (space->agents[current_peng].position[j] * C));
-            printf("%f ", D_ep[j]);
         }
 
         // DEBUG: Print D_ep vector
@@ -104,7 +104,10 @@ void epo_update(EPO *epo, Space *space)
         // Update position (Eq. 13)
         for (int j = 0; j < space->n_variables; j++)
         {
-            double update = A[j] * D_ep[j];
+            double update = A[j] * D_ep[j] * epo->scale;
+            // update = log(1 + fabs(update)) * (update / fabs(update));
+            // space->agents[current_peng].position[j] -= update;
+            update *= random_double(-1, 1);
             space->agents[current_peng].position[j] = space->best_agent.position[j] - update;
 
             // DEBUG: Print the update
