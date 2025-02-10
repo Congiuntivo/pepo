@@ -42,15 +42,6 @@ void epo_update(EPO *epo, Space *space)
             P_grid[j] = fabs(space->best_agent.position[j] - space->agents[current_peng].position[j]);
         }
 
-        // DEBUG: Print the P_grid
-        printf("P_grid:\n\t");
-        for (int j = 0; j < space->n_variables; j++)
-        {
-            printf("%f ", P_grid[j]);
-        }
-        printf("\n");
-        // END DEBUG
-
         // Avoidance coefficient (Eq. 9)
         double *A = (double *)malloc(space->n_variables * sizeof(double));
         double rand_num = random_double(0, 1);
@@ -59,21 +50,8 @@ void epo_update(EPO *epo, Space *space)
             A[j] = epo->M * (T_p + P_grid[j]) * rand_num - T_p;
         }
 
-        // DEBUG: Print A vector
-        printf("A:\n\t");
-        for (int j = 0; j < space->n_variables; j++)
-        {
-            printf("%f ", A[j]);
-        }
-        printf("\n");
-        // END DEBUG
-
-        // Social forces (Eq. 12)
         // TODO: Check if f & l need to be randomized
         double S = social_force(epo);
-
-        // DEBUG: Print the social force
-        printf("S: %f\n", S);
 
         // Distance between current agent and emperor penguin (Eq. 8)
         double *D_ep = (double *)malloc(space->n_variables * sizeof(double));
@@ -83,24 +61,6 @@ void epo_update(EPO *epo, Space *space)
             D_ep[j] = fabs((S * space->best_agent.position[j]) - (space->agents[current_peng].position[j] * C));
         }
 
-        // DEBUG: Print D_ep vector
-        printf("D_ep:\n\t");
-        for (int j = 0; j < space->n_variables; j++)
-        {
-            printf("%f ", D_ep[j]);
-        }
-        printf("\n");
-        // END DEBUG
-
-        // DEBUG: Print the current agent's position
-        printf("Old position:\n\t");
-        for (int j = 0; j < space->n_variables; j++)
-        {
-            printf("%f ", space->agents[current_peng].position[j]);
-        }
-        printf("\nUpdates:\n\t");
-        // END DEBUG
-
         // Update position (Eq. 13)
         for (int j = 0; j < space->n_variables; j++)
         {
@@ -109,10 +69,6 @@ void epo_update(EPO *epo, Space *space)
             // space->agents[current_peng].position[j] -= update;
             update *= random_double(-1, 1);
             space->agents[current_peng].position[j] = space->best_agent.position[j] - update;
-
-            // DEBUG: Print the update
-            printf("%f ", update);
-            // END DEBUG
 
             // Clamp position to bounds
             if (space->agents[current_peng].position[j] < space->lower_bound)
@@ -124,15 +80,6 @@ void epo_update(EPO *epo, Space *space)
                 space->agents[current_peng].position[j] = space->upper_bound;
             }
         }
-
-        // DEBUG: Print the current agent's position
-        printf("\nNew position:\n\t");
-        for (int j = 0; j < space->n_variables; j++)
-        {
-            printf("%f ", space->agents[current_peng].position[j]);
-        }
-        printf("\n\n");
-        // END DEBUG
 
         // TODO: Free once and malloc once
         // Free temporary arrays
