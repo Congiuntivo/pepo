@@ -31,19 +31,21 @@ double temperature_profile(EPO *epo)
 // EPO algorithm update: Updates agents' positions in the search space
 void epo_update(EPO *epo, Space *space)
 {
+    double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
+    double *A = (double *)malloc(space->n_variables * sizeof(double));
+    double *D_ep = (double *)malloc(space->n_variables * sizeof(double));
+
     // Temperature profile (Eq. 7)
     double T_p = temperature_profile(epo);
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
         // Polygon grid accuracy (Eq. 10)
-        double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
         for (int j = 0; j < space->n_variables; j++)
         {
             P_grid[j] = fabs(space->best_agent.position[j] - space->agents[current_peng].position[j]);
         }
 
         // Avoidance coefficient (Eq. 9)
-        double *A = (double *)malloc(space->n_variables * sizeof(double));
         double rand_num = random_double(0, 1);
         for (int j = 0; j < space->n_variables; j++)
         {
@@ -54,7 +56,6 @@ void epo_update(EPO *epo, Space *space)
         double S = social_force(epo);
 
         // Distance between current agent and emperor penguin (Eq. 8)
-        double *D_ep = (double *)malloc(space->n_variables * sizeof(double));
         for (int j = 0; j < space->n_variables; j++)
         {
             double C = random_double(0, 1);
@@ -80,13 +81,13 @@ void epo_update(EPO *epo, Space *space)
                 space->agents[current_peng].position[j] = space->upper_bound;
             }
         }
-
-        // TODO: Free once and malloc once
-        // Free temporary arrays
-        free(P_grid);
-        free(A);
-        free(D_ep);
     }
+    // Free temporary arrays
+    free(P_grid);
+    free(A);
+    free(D_ep);
+
+    // Increment iterations
     epo->itr++;
 }
 
