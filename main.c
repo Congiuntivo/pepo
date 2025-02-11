@@ -107,8 +107,11 @@ int main(int argc, char *argv[])
 
         printf("Rank %d: Best fitness: %.6f\n", rank, space.best_agent.fitness);
 
-        // Write to CSV file: iteration and best fitness
-        log_population(&space, file, temperature_profile(&epo), iteration);
+        if (rank == 0)
+        {
+            // Write to CSV file: iteration and best fitness
+            log_population(&space, file, temperature_profile(&epo), iteration);
+        }
 
         // Perform EPO update
         epo_update(&epo, &space);
