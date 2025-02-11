@@ -12,10 +12,11 @@ typedef struct
     double l; // Exploitation control parameter in [1.5, 2]
     int itr; // Current iteration
     int max_itr; // Maximum number of iterations
+    double scale; // Scale factor
 } EPO;
 
 // Function to initialize the EPO structure
-void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr);
+void init_epo(EPO *epo, double R, double M, double f, double l, int max_itr, double scale);
 
 double temperature_profile(EPO *epo);
 

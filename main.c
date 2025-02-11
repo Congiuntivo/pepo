@@ -24,15 +24,15 @@ void log_population(Space *space, FILE *file, double temperature_profile, int it
 void format_position_string(char *position_str, size_t position_str_size, const double *position, int n_variables);
 
 // Read command line arguments
-void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M);
+void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M, double *scale);
 
 int main(int argc, char *argv[])
 {
     int n_agents, n_variables, n_iterations;
-    double lower_bound, upper_bound, f, l, R, M;
+    double lower_bound, upper_bound, f, l, R, M, scale;
 
     // Read command line arguments
-    read_cli(argc, argv, &n_agents, &n_variables, &n_iterations, &lower_bound, &upper_bound, &f, &l, &R, &M);
+    read_cli(argc, argv, &n_agents, &n_variables, &n_iterations, &lower_bound, &upper_bound, &f, &l, &R, &M, &scale);
 
     srand(time(NULL)); // Set random seed
 
@@ -52,7 +52,7 @@ int main(int argc, char *argv[])
 
     // Initialize EPO
     EPO epo;
-    init_epo(&epo, R, M, f, l, n_iterations);
+    init_epo(&epo, R, M, f, l, n_iterations, scale);
 
     // Optimization loop
     for (int iteration = 1; iteration <= n_iterations; iteration++)
@@ -185,7 +185,7 @@ double michealewicz_function(double *position, int n_variables)
     return fitness;
 }
 
-void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M)
+void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M, double *scale)
 {
     // Set default values
     *n_agents = 80;
@@ -197,6 +197,7 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
     *l = 1.5; // Exploitation control parameter
     *R = 0.5; // Huddle radius
     *M = 2.0; // Movement parameter
+    *scale = 1.0; // Scale factor
 
     if (argc >= 2)
     {
@@ -213,6 +214,8 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
             printf("\t-l                     Exploitation control parameter (default: %f)\n", *l);
             printf("\t-R,   --radius         Huddle radius (default: %f)\n", *R);
             printf("\t-M                     Movement parameter (default: %f)\n", *M);
+            printf("\t-s    --scale          Scale factor (default: %f)\n", *scale);
+            printf("\t-h,   --help           Display this help message\n");
             exit(0);
         }
     }
@@ -257,6 +260,10 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
         else if (strcmp(argv[i], "-M") == 0)
         {
             *M = atof(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--scale") == 0)
+        {
+            *scale = atof(argv[i + 1]);
         }
         i += 2;
     }
