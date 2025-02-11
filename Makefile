@@ -41,6 +41,11 @@ $(BUILD_DIR)/%.o: lib/%.c | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
+# Run the program with a user-defined number of processes
+NPROCS ?= 4  # Default to 4 processes if not specified
+run: $(TARGET)
+	mpirun -np $(NPROCS) ./$(TARGET) $(ARGS)
+
 # Clean up object files and executable
 clean:
 	rm -f $(TARGET) $(OBJECTS)
