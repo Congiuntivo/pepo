@@ -15,9 +15,6 @@ double sphere_function(double *position, int n_variables);
 // Read command line arguments
 void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M, double *scale);
 
-// Create MPI derived datatype for FitnessRank
-void create_mpi_fitness_type(MPI_Datatype *mpi_fitness_type);
-
 typedef struct
 {
     double fitness;
@@ -34,9 +31,6 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-    // Create MPI datatype for FitnessRank
-    MPI_Datatype mpi_fitness_type;
-    create_mpi_fitness_type(&mpi_fitness_type);
 
     // Root reads command line arguments and broadcasts
     if (rank == 0)
@@ -98,7 +92,7 @@ int main(int argc, char *argv[])
         local.rank = rank;
 
         // Perform MPI_Allreduce with MPI_MINLOC
-        MPI_Allreduce(&local, &global, 1, mpi_fitness_type, MPI_MINLOC, MPI_COMM_WORLD);
+        MPI_Allreduce(&local, &global, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
         if (rank == global.rank)
         {
@@ -125,8 +119,7 @@ int main(int argc, char *argv[])
 
     // Free allocated memory
     free_space(&space);
-    
-    MPI_Type_free(&mpi_fitness_type);
+
     MPI_Finalize();
 
     return 0;
@@ -225,18 +218,4 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
         }
         i += 2;
     }
-}
-
-void create_mpi_fitness_type(MPI_Datatype *mpi_fitness_type)
-{
-    int block_lengths[2] = {1, 1};
-    MPI_Aint displacements[2];
-    MPI_Datatype types[2] = {MPI_DOUBLE, MPI_INT};
-
-    FitnessRank temp;
-    displacements[0] = (MPI_Aint)&temp.fitness - (MPI_Aint)&temp;
-    displacements[1] = (MPI_Aint)&temp.rank - (MPI_Aint)&temp;
-
-    MPI_Type_create_struct(2, block_lengths, displacements, types, mpi_fitness_type);
-    MPI_Type_commit(mpi_fitness_type);
 }
