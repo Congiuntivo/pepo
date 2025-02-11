@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <mpi.h>
 
 #include "space.h"
 #include "epo.h"
@@ -14,31 +15,72 @@ double sphere_function(double *position, int n_variables);
 // Read command line arguments
 void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_iterations, double *lower_bound, double *upper_bound, double *f, double *l, double *R, double *M, double *scale);
 
+// Create MPI derived datatype for FitnessRank
+void create_mpi_fitness_type(MPI_Datatype *mpi_fitness_type);
+
+typedef struct
+{
+    double fitness;
+    int rank;
+} FitnessRank;
+
 int main(int argc, char *argv[])
 {
-    int n_agents, n_variables, n_iterations;
+    int rank, comm_size, n_agents, n_variables, n_iterations;
     double lower_bound, upper_bound, f, l, R, M, scale;
 
-    // Read command line arguments
-    read_cli(argc, argv, &n_agents, &n_variables, &n_iterations, &lower_bound, &upper_bound, &f, &l, &R, &M, &scale);
+    // Initialize MPI
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-    srand(time(NULL)); // Set random seed
+    // Create MPI datatype for FitnessRank
+    MPI_Datatype mpi_fitness_type;
+    create_mpi_fitness_type(&mpi_fitness_type);
 
-    // Create CSV file
-    const char *field_names[] = {"Iteration", "Fitness", "Position", "TempP"};
-    FILE *file = csv_open("output.csv", field_names, 4);
-
-    if (!file)
+    // Root reads command line arguments and broadcasts
+    if (rank == 0)
     {
-        fprintf(stderr, "Failed to create output.csv\n");
-        return EXIT_FAILURE;
+        read_cli(argc, argv, &n_agents, &n_variables, &n_iterations,
+                 &lower_bound, &upper_bound, &f, &l, &R, &M, &scale);
     }
 
-    // Initialize search space
-    Space space;
-    init_space(&space, n_agents, n_variables, lower_bound, upper_bound);
+    // Broadcast parameters to all processes
+    MPI_Bcast(&n_agents, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&n_variables, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&n_iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&lower_bound, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&upper_bound, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&f, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&l, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&R, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&M, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&scale, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
 
-    // Initialize EPO
+    // Calculate local number of agents
+    int local_n_agents = n_agents / comm_size;
+    if (rank < n_agents % comm_size)
+        local_n_agents++;
+
+    // Set different random seeds for each process
+    srand(time(NULL) + rank);
+
+    // Root process handles file I/O
+    FILE *file = NULL;
+    if (rank == 0)
+    {
+        const char *field_names[] = {"Iteration", "Fitness", "Position", "TempP"};
+        file = csv_open("output.csv", field_names, 4);
+        if (!file)
+        {
+            fprintf(stderr, "Failed to create output.csv\n");
+            MPI_Abort(MPI_COMM_WORLD, 1);
+        }
+    }
+
+    // Initialize local search space and EPO
+    Space space;
+    init_space(&space, local_n_agents, n_variables, lower_bound, upper_bound);
     EPO epo;
     init_epo(&epo, R, M, f, l, n_iterations, scale);
 
@@ -47,6 +89,29 @@ int main(int argc, char *argv[])
     {
         // Update fitness and find the best agent
         update_best_agent(&space, sphere_function);
+
+        printf("Rank %d: Best fitness: %.6f\n", rank, space.best_agent.fitness);
+
+        // Prepare for reduction
+        FitnessRank local, global;
+        local.fitness = space.best_agent.fitness;
+        local.rank = rank;
+
+        // Perform MPI_Allreduce with MPI_MINLOC
+        MPI_Allreduce(&local, &global, 1, mpi_fitness_type, MPI_MINLOC, MPI_COMM_WORLD);
+
+        if (rank == global.rank)
+        {
+            // Print best agent found
+            printf("Rank %d: Fitness: %.6f\n", rank, global.fitness);
+        }
+
+        // Broadcast best agent position to all processes
+        MPI_Bcast(space.best_agent.position, n_variables, MPI_DOUBLE, global.rank, MPI_COMM_WORLD);
+        // Evaluate best agent fitness
+        space.best_agent.fitness = sphere_function(space.best_agent.position, n_variables);
+
+        printf("Rank %d: Best fitness: %.6f\n", rank, space.best_agent.fitness);
 
         // Write to CSV file: iteration and best fitness
         log_population(&space, file, temperature_profile(&epo), iteration);
@@ -60,6 +125,9 @@ int main(int argc, char *argv[])
 
     // Free allocated memory
     free_space(&space);
+    
+    MPI_Type_free(&mpi_fitness_type);
+    MPI_Finalize();
 
     return 0;
 }
@@ -157,4 +225,18 @@ void read_cli(int argc, char *argv[], int *n_agents, int *n_variables, int *n_it
         }
         i += 2;
     }
+}
+
+void create_mpi_fitness_type(MPI_Datatype *mpi_fitness_type)
+{
+    int block_lengths[2] = {1, 1};
+    MPI_Aint displacements[2];
+    MPI_Datatype types[2] = {MPI_DOUBLE, MPI_INT};
+
+    FitnessRank temp;
+    displacements[0] = (MPI_Aint)&temp.fitness - (MPI_Aint)&temp;
+    displacements[1] = (MPI_Aint)&temp.rank - (MPI_Aint)&temp;
+
+    MPI_Type_create_struct(2, block_lengths, displacements, types, mpi_fitness_type);
+    MPI_Type_commit(mpi_fitness_type);
 }

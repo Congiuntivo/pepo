@@ -1,5 +1,5 @@
 # Compiler and flags
-CC = gcc
+CC = mpicc
 CFLAGS = -Wall -Wextra -std=c99 -lm
 INC = -I lib
 
