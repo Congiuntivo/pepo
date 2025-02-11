@@ -2,6 +2,11 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
+#include <math.h>
+
+#ifndef M_PI
+#define M_PI 3.14159265358979323846
+#endif
 
 #include "space.h"
 #include "epo.h"
@@ -10,7 +15,10 @@
 
 // Example fitness function: Sphere function
 double sphere_function(double *position, int n_variables);
-
+double matyas_function(double *position, int n_variables);
+double bukin_function(double *position, int n_variables);
+double mccormick_function(double *position, int n_variables);
+double michealewicz_function(double *position, int n_variables);
 // Helper functions for CSV logging
 void log_population(Space *space, FILE *file, double temperature_profile, int iteration);
 void format_position_string(char *position_str, size_t position_str_size, const double *position, int n_variables);
@@ -50,7 +58,7 @@ int main(int argc, char *argv[])
     for (int iteration = 1; iteration <= n_iterations; iteration++)
     {
         // Update fitness and find the best agent
-        update_best_agent(&space, sphere_function);
+        update_best_agent(&space, michealewicz_function);
 
         // Write to CSV file: iteration and best fitness
         log_population(&space, file, temperature_profile(&epo), iteration);
@@ -137,6 +145,42 @@ double sphere_function(double *position, int n_variables)
     for (int i = 0; i < n_variables; i++)
     {
         fitness += position[i] * position[i];
+    }
+    return fitness;
+}
+
+// Example fitness function: Matyas function
+double matyas_function(double *position, int n_variables)
+{
+    double x_square = position[0] * position[0];
+    double y_square = position[1] * position[1];
+    double x_y = position[0] * position[1];
+    double fitness = 0.26 * (x_square + y_square) - (0.48 * x_y);
+    return fitness;
+}
+
+double bukin_function(double *position, int n_variables)
+{
+    double x = position[0];
+    double y = position[1];
+    double fitness = 100 * sqrt(fabs(y - 0.01 * x * x)) + 0.01 * fabs(x + 10);
+    return fitness;
+}
+
+double mccormick_function(double *position, int n_variables)
+{
+    double x = position[0];
+    double y = position[1];
+    double fitness = sin(x + y) + (x - y) * (x - y) - 1.5 * x + 2.5 * y + 1;
+    return fitness;
+}
+
+double michealewicz_function(double *position, int n_variables)
+{
+    double fitness = 0.0;
+    for (int i = 0; i < n_variables; i++)
+    {
+        fitness += -sin(position[i]) * pow(sin((i + 1) * position[i] * position[i] / M_PI), 20);
     }
     return fitness;
 }

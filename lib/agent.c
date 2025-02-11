@@ -18,7 +18,7 @@ void init_agent(Agent *agent, int n_variables, double lower_bound, double upper_
     {
         agent->position[i] = random_double(lower_bound, upper_bound);
     }
-}
+} 
 
 // Free memory allocated for an agent
 void free_agent(Agent *agent)

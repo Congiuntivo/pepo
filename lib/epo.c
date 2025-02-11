@@ -106,7 +106,7 @@ void epo_update(EPO *epo, Space *space)
         {
             double update = A[j] * D_ep[j];
             space->agents[current_peng].position[j] = space->best_agent.position[j] - update;
-
+            // space->agents[current_peng].position[j] = space->best_agent.position[j] - update;
             // DEBUG: Print the update
             printf("%f ", update);
             // END DEBUG
@@ -135,7 +135,7 @@ void epo_update(EPO *epo, Space *space)
         // Free temporary arrays
         free(P_grid);
         free(A);
-        free(D_ep);
+        free(D_ep); 
     }
     epo->itr++;
 }
@@ -147,6 +147,6 @@ double social_force(EPO *epo)
     sf = epo->f * exp(-((double)epo->itr / epo->l)) - exp(-epo->itr);
     sf = pow(sf, 2);
     sf = sqrt(sf);
-    // TODO: Check if needs only to be squared or both even if it makes no sense
+    // TODO: Check if needs only to be squared or both even if it makes no sens
     return sf;
 }
