@@ -31,7 +31,6 @@ int main(int argc, char *argv[])
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-
     // Root reads command line arguments and broadcasts
     if (rank == 0)
     {
@@ -84,8 +83,6 @@ int main(int argc, char *argv[])
         // Update fitness and find the best agent
         update_best_agent(&space, sphere_function);
 
-        printf("Rank %d: Best fitness: %.6f\n", rank, space.best_agent.fitness);
-
         // Prepare for reduction
         FitnessRank local, global;
         local.fitness = space.best_agent.fitness;
@@ -94,21 +91,14 @@ int main(int argc, char *argv[])
         // Perform MPI_Allreduce with MPI_MINLOC
         MPI_Allreduce(&local, &global, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
-        if (rank == global.rank)
-        {
-            // Print best agent found
-            printf("Rank %d: Fitness: %.6f\n", rank, global.fitness);
-        }
-
         // Broadcast best agent position to all processes
         MPI_Bcast(space.best_agent.position, n_variables, MPI_DOUBLE, global.rank, MPI_COMM_WORLD);
         // Evaluate best agent fitness
         space.best_agent.fitness = sphere_function(space.best_agent.position, n_variables);
 
-        printf("Rank %d: Best fitness: %.6f\n", rank, space.best_agent.fitness);
-
         if (rank == 0)
         {
+            printf("Itr %d: Best fitness: %.6f\n", iteration, space.best_agent.fitness);
             // Write to CSV file: iteration and best fitness
             log_population(&space, file, temperature_profile(&epo), iteration);
         }
@@ -117,8 +107,14 @@ int main(int argc, char *argv[])
         epo_update(&epo, &space);
     }
 
-    printf("Best agent found:\n");
-    printf("Fitness: %.6f\n", space.best_agent.fitness);
+    if (rank == 0)
+    {
+        printf("Best agent found:\n");
+        printf("Fitness: %.6f\n", space.best_agent.fitness);
+
+        // Close CSV file
+        csv_close(file);
+    }
 
     // Free allocated memory
     free_space(&space);
