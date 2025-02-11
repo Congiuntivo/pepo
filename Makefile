@@ -8,7 +8,7 @@ TARGET = epo.out
 
 # Source files
 MAIN = main.c
-LIB_SRC = agent.c utils.c space.c epo.c csv.c
+LIB_SRC = agent.c utils.c space.c epo.c csv.c cli.c
 LIB_SRC := $(addprefix lib/, $(LIB_SRC))
 
 SOURCES = $(MAIN) $(LIB_SRC)
