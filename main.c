@@ -30,21 +30,6 @@ typedef struct
     int rank;
 } FitnessRank;
 
-/* === Parameters Structure for CLI Options === */
-typedef struct
-{
-    int n_agents;
-    int n_variables;
-    int n_iterations;
-    double lower_bound;
-    double upper_bound;
-    double f;
-    double l;
-    double R;
-    double M;
-    double scale;
-} Parameters;
-
 /* === Create Custom MPI Datatype for Parameters Struct === */
 static void create_parameters_type(MPI_Datatype *param_type)
 {
@@ -123,9 +108,7 @@ int main(int argc, char *argv[])
     if (rank == 0)
     {
         /* Only the root reads CLI arguments */
-        read_cli(argc, argv, &params.n_agents, &params.n_variables, &params.n_iterations,
-                 &params.lower_bound, &params.upper_bound, &params.f, &params.l,
-                 &params.R, &params.M, &params.scale);
+        read_cli(argc, argv, &params);
     }
     MPI_Datatype MPI_PARAMS;
     create_parameters_type(&MPI_PARAMS);
