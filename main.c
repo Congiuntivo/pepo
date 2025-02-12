@@ -15,17 +15,13 @@
 #include "csv.h"
 #include "cli.h"
 
-// Example fitness function: Sphere function
+// Fitness functions
+
 double sphere_function(double *position, int n_variables);
 double matyas_function(double *position, int n_variables);
 double bukin_function(double *position, int n_variables);
 double mccormick_function(double *position, int n_variables);
 double michealewicz_function(double *position, int n_variables);
-
-// Helper functions for CSV logging
-void log_population(Space *space, FILE *file, double temperature_profile, int iteration);
-void format_position_string(char *position_str, size_t position_str_size, const double *position, int n_variables);
-
 
 typedef struct
 {
@@ -37,6 +33,9 @@ int main(int argc, char *argv[])
 {
     int rank, comm_size, n_agents, n_variables, n_iterations;
     double lower_bound, upper_bound, f, l, R, M, scale;
+
+    // Benchmark function
+    double (*fitness_function)(double *, int) = michealewicz_function;
 
     // Initialize MPI
     MPI_Init(&argc, &argv);
@@ -93,7 +92,7 @@ int main(int argc, char *argv[])
     for (int iteration = 1; iteration <= n_iterations; iteration++)
     {
         // Update fitness and find the best agent
-        update_best_agent(&space, michealewicz_function);
+        update_best_agent(&space, fitness_function);
 
         // Prepare for reduction
         FitnessRank local, global;
@@ -106,7 +105,7 @@ int main(int argc, char *argv[])
         // Broadcast best agent position to all processes
         MPI_Bcast(space.best_agent.position, n_variables, MPI_DOUBLE, global.rank, MPI_COMM_WORLD);
         // Evaluate best agent fitness
-        space.best_agent.fitness = sphere_function(space.best_agent.position, n_variables);
+        space.best_agent.fitness = fitness_function(space.best_agent.position, n_variables);
 
         if (rank == 0)
         {
