@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = mpicc
-CFLAGS = -Wall -Wextra -std=c99 -lm
+CFLAGS = -Wall -Wextra -std=c99 -lm -Wno-unused-function
 INC = -I lib
 
 # Targets
