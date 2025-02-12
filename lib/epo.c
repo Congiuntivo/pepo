@@ -1,6 +1,7 @@
 #include <math.h>
 #include <stdlib.h>
 #include <stdio.h>
+#include <omp.h>
 
 #include "epo.h"
 #include "utils.h"
@@ -31,15 +32,17 @@ double temperature_profile(EPO *epo)
 // EPO algorithm update: Updates agents' positions in the search space
 void epo_update(EPO *epo, Space *space)
 {
-    double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
-    double *A = (double *)malloc(space->n_variables * sizeof(double));
-    double *D_ep = (double *)malloc(space->n_variables * sizeof(double));
-
+    
     // Temperature profile (Eq. 7)
     double T_p = temperature_profile(epo);
-
+    
+    #pragma omp parallel for schedule(static,2) shared(epo, space, T_p)
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
+        double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
+        double *A = (double *)malloc(space->n_variables * sizeof(double));
+        double *D_ep = (double *)malloc(space->n_variables * sizeof(double));
+
         // Polygon grid accuracy (Eq. 10)
         for (int j = 0; j < space->n_variables; j++)
         {
@@ -81,11 +84,11 @@ void epo_update(EPO *epo, Space *space)
                 space->agents[current_peng].position[j] = space->upper_bound;
             }
         }
+        // Free temporary arrays
+        free(P_grid);
+        free(A);
+        free(D_ep);
     }
-    // Free temporary arrays
-    free(P_grid);
-    free(A);
-    free(D_ep);
 
     // Increment iterations
     epo->itr++;
