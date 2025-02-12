@@ -37,6 +37,7 @@ void epo_update(EPO *epo, Space *space)
 
     // Temperature profile (Eq. 7)
     double T_p = temperature_profile(epo);
+
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
         // Polygon grid accuracy (Eq. 10)
