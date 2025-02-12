@@ -1,5 +1,5 @@
 # Compiler and flags
-CC = gcc
+CC = mpicc
 CFLAGS = -Wall -Wextra -std=c99 -lm
 INC = -I lib
 
@@ -8,7 +8,7 @@ TARGET = epo.out
 
 # Source files
 MAIN = main.c
-LIB_SRC = agent.c utils.c space.c epo.c csv.c
+LIB_SRC = agent.c utils.c space.c epo.c csv.c cli.c
 LIB_SRC := $(addprefix lib/, $(LIB_SRC))
 
 SOURCES = $(MAIN) $(LIB_SRC)
@@ -40,6 +40,11 @@ $(BUILD_DIR)/%.o: lib/%.c | $(BUILD_DIR)
 # Compile main file into object file
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
+
+# Run the program with a user-defined number of processes
+NPROCS ?= 4  # Default to 4 processes if not specified
+run: $(TARGET)
+	mpirun -np $(NPROCS) ./$(TARGET) $(ARGS)
 
 # Clean up object files and executable
 clean:

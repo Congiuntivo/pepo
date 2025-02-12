@@ -53,7 +53,6 @@ void epo_update(EPO *epo, Space *space)
             A[j] = epo->M * (T_p + P_grid[j]) * rand_num - T_p;
         }
 
-        // TODO: Check if f & l need to be randomized
         double S = social_force(epo);
 
         // Distance between current agent and emperor penguin (Eq. 8)
@@ -99,6 +98,5 @@ double social_force(EPO *epo)
     sf = epo->f * exp(-((double)epo->itr / epo->l)) - exp(-epo->itr);
     sf = pow(sf, 2);
     sf = sqrt(sf);
-    // TODO: Check if needs only to be squared or both even if it makes no sens
     return sf;
 }
