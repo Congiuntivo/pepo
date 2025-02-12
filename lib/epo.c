@@ -32,28 +32,33 @@ double temperature_profile(EPO *epo)
 // EPO algorithm update: Updates agents' positions in the search space
 void epo_update(EPO *epo, Space *space)
 {
-    
     // Temperature profile (Eq. 7)
     double T_p = temperature_profile(epo);
-    
-    #pragma omp parallel for schedule(static,2) shared(epo, space, T_p)
+
+    // Get number of threads
+    int num_threads = omp_get_max_threads();
+
+    // Temporary arrays for each thread
+    double *P_grid = (double *)malloc(num_threads * space->n_variables * sizeof(double));
+    double *A = (double *)malloc(num_threads * space->n_variables * sizeof(double));
+    double *D_ep = (double *)malloc(num_threads * space->n_variables * sizeof(double));
+
+#pragma omp parallel for schedule(static, 2) shared(epo, space, T_p)
     for (int current_peng = 0; current_peng < space->n_agents; current_peng++)
     {
-        double *P_grid = (double *)malloc(space->n_variables * sizeof(double));
-        double *A = (double *)malloc(space->n_variables * sizeof(double));
-        double *D_ep = (double *)malloc(space->n_variables * sizeof(double));
+        int thread_offset = omp_get_thread_num() * space->n_variables;
 
         // Polygon grid accuracy (Eq. 10)
         for (int j = 0; j < space->n_variables; j++)
         {
-            P_grid[j] = fabs(space->best_agent.position[j] - space->agents[current_peng].position[j]);
+            P_grid[thread_offset + j] = fabs(space->best_agent.position[j] - space->agents[current_peng].position[j]);
         }
 
         // Avoidance coefficient (Eq. 9)
         double rand_num = random_double(0, 1);
         for (int j = 0; j < space->n_variables; j++)
         {
-            A[j] = epo->M * (T_p + P_grid[j]) * rand_num - T_p;
+            A[thread_offset + j] = epo->M * (T_p + P_grid[thread_offset + j]) * rand_num - T_p;
         }
 
         double S = social_force(epo);
@@ -62,13 +67,13 @@ void epo_update(EPO *epo, Space *space)
         for (int j = 0; j < space->n_variables; j++)
         {
             double C = random_double(0, 1);
-            D_ep[j] = fabs((S * space->best_agent.position[j]) - (space->agents[current_peng].position[j] * C));
+            D_ep[thread_offset + j] = fabs((S * space->best_agent.position[j]) - (space->agents[current_peng].position[j] * C));
         }
 
         // Update position (Eq. 13)
         for (int j = 0; j < space->n_variables; j++)
         {
-            double update = A[j] * D_ep[j] * epo->scale;
+            double update = A[thread_offset + j] * D_ep[thread_offset + j] * epo->scale;
             // update = log(1 + fabs(update)) * (update / fabs(update));
             // space->agents[current_peng].position[j] -= update;
             update *= random_double(-1, 1);
@@ -84,11 +89,12 @@ void epo_update(EPO *epo, Space *space)
                 space->agents[current_peng].position[j] = space->upper_bound;
             }
         }
-        // Free temporary arrays
-        free(P_grid);
-        free(A);
-        free(D_ep);
     }
+
+    // Free temporary arrays
+    free(P_grid);
+    free(A);
+    free(D_ep);
 
     // Increment iterations
     epo->itr++;
