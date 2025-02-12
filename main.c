@@ -2,8 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#include <mpi.h>
 #include <math.h>
+#include <stddef.h> // for offsetof
+#include <mpi.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
@@ -15,128 +16,172 @@
 #include "csv.h"
 #include "cli.h"
 
-// Fitness functions
+/* === Fitness Function Prototypes === */
+static double sphere_function(double *position, int n_variables);
+static double matyas_function(double *position, int n_variables);
+static double bukin_function(double *position, int n_variables);
+static double mccormick_function(double *position, int n_variables);
+static double michealewicz_function(double *position, int n_variables);
 
-double sphere_function(double *position, int n_variables);
-double matyas_function(double *position, int n_variables);
-double bukin_function(double *position, int n_variables);
-double mccormick_function(double *position, int n_variables);
-double michealewicz_function(double *position, int n_variables);
-
+/* === Helper Structure for MPI Reduction (fitness, rank) === */
 typedef struct
 {
     double fitness;
     int rank;
 } FitnessRank;
 
+/* === Parameters Structure for CLI Options === */
+typedef struct
+{
+    int n_agents;
+    int n_variables;
+    int n_iterations;
+    double lower_bound;
+    double upper_bound;
+    double f;
+    double l;
+    double R;
+    double M;
+    double scale;
+} Parameters;
+
+/* === Create Custom MPI Datatype for Parameters Struct === */
+static void create_parameters_type(MPI_Datatype *param_type)
+{
+    int blocklengths[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+    MPI_Aint offsets[10];
+    offsets[0] = offsetof(Parameters, n_agents);
+    offsets[1] = offsetof(Parameters, n_variables);
+    offsets[2] = offsetof(Parameters, n_iterations);
+    offsets[3] = offsetof(Parameters, lower_bound);
+    offsets[4] = offsetof(Parameters, upper_bound);
+    offsets[5] = offsetof(Parameters, f);
+    offsets[6] = offsetof(Parameters, l);
+    offsets[7] = offsetof(Parameters, R);
+    offsets[8] = offsetof(Parameters, M);
+    offsets[9] = offsetof(Parameters, scale);
+
+    MPI_Datatype types[10] = {MPI_INT, MPI_INT, MPI_INT,
+                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
+                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
+
+    MPI_Type_create_struct(10, blocklengths, offsets, types, param_type);
+    MPI_Type_commit(param_type);
+}
+
+/* === Optimization Loop ===
+ * This function performs the main iterative optimization process.
+ * It updates the best agent locally, synchronizes the best solution
+ * among all processes via MPI_Allreduce/MPI_Bcast, logs progress, and
+ * performs the EPO update.
+ */
+static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
+                     double (*fitness_function)(double *, int), FILE *csv_file, int rank)
+{
+    for (int iteration = 1; iteration <= n_iterations; iteration++)
+    {
+        /* Update the local best agent based on the chosen fitness function */
+        update_best_agent(space, fitness_function);
+
+        /* Prepare local best info for global reduction */
+        FitnessRank local_best;
+        local_best.fitness = space->best_agent.fitness;
+        local_best.rank = rank;
+
+        /* Global reduction to find the overall best agent (lowest fitness) */
+        FitnessRank global_best;
+        MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+
+        /* Broadcast the best agent’s position from the process that had it */
+        MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+        /* Update best agent's fitness based on the broadcast position */
+        space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+
+        /* Root process prints and logs the current best fitness */
+        if (rank == 0)
+        {
+            printf("Iteration %d: Best fitness = %.6f\n", iteration, space->best_agent.fitness);
+            log_population(space, csv_file, temperature_profile(epo), iteration);
+        }
+
+        /* Update the EPO algorithm state */
+        epo_update(epo, space);
+    }
+}
+
 int main(int argc, char *argv[])
 {
-    int rank, comm_size, n_agents, n_variables, n_iterations;
-    double lower_bound, upper_bound, f, l, R, M, scale;
+    int rank, comm_size;
 
-    // Benchmark function
-    double (*fitness_function)(double *, int) = michealewicz_function;
-
-    // Initialize MPI
+    /* Initialize MPI */
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &comm_size);
 
-    // Root reads command line arguments and broadcasts
+    /* === Read and Broadcast Parameters === */
+    Parameters params;
     if (rank == 0)
     {
-        read_cli(argc, argv, &n_agents, &n_variables, &n_iterations,
-                 &lower_bound, &upper_bound, &f, &l, &R, &M, &scale);
+        /* Only the root reads CLI arguments */
+        read_cli(argc, argv, &params.n_agents, &params.n_variables, &params.n_iterations,
+                 &params.lower_bound, &params.upper_bound, &params.f, &params.l,
+                 &params.R, &params.M, &params.scale);
     }
+    MPI_Datatype MPI_PARAMS;
+    create_parameters_type(&MPI_PARAMS);
+    MPI_Bcast(&params, 1, MPI_PARAMS, 0, MPI_COMM_WORLD);
+    MPI_Type_free(&MPI_PARAMS);
 
-    // Broadcast parameters to all processes
-    MPI_Bcast(&n_agents, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&n_variables, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&n_iterations, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&lower_bound, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&upper_bound, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&f, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&l, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&R, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&M, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-    MPI_Bcast(&scale, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
-
-    // Calculate local number of agents
-    int local_n_agents = n_agents / comm_size;
-    if (rank < n_agents % comm_size)
+    /* Calculate the number of agents assigned to this process */
+    int local_n_agents = params.n_agents / comm_size;
+    if (rank < (params.n_agents % comm_size))
         local_n_agents++;
 
-    // Set different random seeds for each process
-    srand(time(NULL) + rank);
+    /* Seed the random number generator uniquely per process */
+    srand((unsigned int)time(NULL) + rank);
 
-    // Root process handles file I/O
-    FILE *file = NULL;
+    /* === Setup CSV Logging on the Root Process === */
+    FILE *csv_file = NULL;
     if (rank == 0)
     {
         const char *field_names[] = {"Iteration", "Fitness", "Position", "TempP"};
-        file = csv_open("output.csv", field_names, 4);
-        if (!file)
+        csv_file = csv_open("output.csv", field_names, 4);
+        if (!csv_file)
         {
-            fprintf(stderr, "Failed to create output.csv\n");
+            fprintf(stderr, "Failed to open output.csv\n");
             MPI_Abort(MPI_COMM_WORLD, 1);
         }
     }
 
-    // Initialize local search space and EPO
+    /* === Initialize Search Space and EPO Algorithm Structures === */
     Space space;
-    init_space(&space, local_n_agents, n_variables, lower_bound, upper_bound);
+    init_space(&space, local_n_agents, params.n_variables, params.lower_bound, params.upper_bound);
+
     EPO epo;
-    init_epo(&epo, R, M, f, l, n_iterations, scale);
+    init_epo(&epo, params.R, params.M, params.f, params.l, params.n_iterations, params.scale);
 
-    // Optimization loop
-    for (int iteration = 1; iteration <= n_iterations; iteration++)
-    {
-        // Update fitness and find the best agent
-        update_best_agent(&space, fitness_function);
+    /* Select the fitness function to use (change as desired) */
+    double (*fitness_function)(double *, int) = michealewicz_function;
 
-        // Prepare for reduction
-        FitnessRank local, global;
-        local.fitness = space.best_agent.fitness;
-        local.rank = rank;
+    /* === Run the Optimization Loop === */
+    optimize(params.n_iterations, params.n_variables, &space, &epo, fitness_function, csv_file, rank);
 
-        // Perform MPI_Allreduce with MPI_MINLOC
-        MPI_Allreduce(&local, &global, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
-
-        // Broadcast best agent position to all processes
-        MPI_Bcast(space.best_agent.position, n_variables, MPI_DOUBLE, global.rank, MPI_COMM_WORLD);
-        // Evaluate best agent fitness
-        space.best_agent.fitness = fitness_function(space.best_agent.position, n_variables);
-
-        if (rank == 0)
-        {
-            printf("Itr %d: Best fitness: %.6f\n", iteration, space.best_agent.fitness);
-            // Write to CSV file: iteration and best fitness
-            log_population(&space, file, temperature_profile(&epo), iteration);
-        }
-
-        // Perform EPO update
-        epo_update(&epo, &space);
-    }
-
+    /* === Final Output and Cleanup === */
     if (rank == 0)
     {
         printf("Best agent found:\n");
         printf("Fitness: %.6f\n", space.best_agent.fitness);
-
-        // Close CSV file
-        csv_close(file);
+        csv_close(csv_file);
     }
 
-    // Free allocated memory
     free_space(&space);
-
     MPI_Finalize();
-
     return 0;
 }
 
-// Example fitness function: Sphere function
-double sphere_function(double *position, int n_variables)
+/* === Fitness Function Implementations === */
+
+static double sphere_function(double *position, int n_variables)
 {
     double fitness = 0.0;
     for (int i = 0; i < n_variables; i++)
@@ -146,38 +191,36 @@ double sphere_function(double *position, int n_variables)
     return fitness;
 }
 
-// Example fitness function: Matyas function
-double matyas_function(double *position, int n_variables)
+static double matyas_function(double *position, int n_variables)
 {
-    double x_square = position[0] * position[0];
-    double y_square = position[1] * position[1];
-    double x_y = position[0] * position[1];
-    double fitness = 0.26 * (x_square + y_square) - (0.48 * x_y);
-    return fitness;
+    if (n_variables < 2)
+        return 0.0; // Requires at least 2 dimensions
+    double x = position[0], y = position[1];
+    return 0.26 * (x * x + y * y) - 0.48 * (x * y);
 }
 
-double bukin_function(double *position, int n_variables)
+static double bukin_function(double *position, int n_variables)
 {
-    double x = position[0];
-    double y = position[1];
-    double fitness = 100 * sqrt(fabs(y - 0.01 * x * x)) + 0.01 * fabs(x + 10);
-    return fitness;
+    if (n_variables < 2)
+        return 0.0; // Requires at least 2 dimensions
+    double x = position[0], y = position[1];
+    return 100.0 * sqrt(fabs(y - 0.01 * x * x)) + 0.01 * fabs(x + 10.0);
 }
 
-double mccormick_function(double *position, int n_variables)
+static double mccormick_function(double *position, int n_variables)
 {
-    double x = position[0];
-    double y = position[1];
-    double fitness = sin(x + y) + (x - y) * (x - y) - 1.5 * x + 2.5 * y + 1;
-    return fitness;
+    if (n_variables < 2)
+        return 0.0; // Requires at least 2 dimensions
+    double x = position[0], y = position[1];
+    return sin(x + y) + (x - y) * (x - y) - 1.5 * x + 2.5 * y + 1.0;
 }
 
-double michealewicz_function(double *position, int n_variables)
+static double michealewicz_function(double *position, int n_variables)
 {
     double fitness = 0.0;
     for (int i = 0; i < n_variables; i++)
     {
-        fitness += -sin(position[i]) * pow(sin((i + 1) * position[i] * position[i] / M_PI), 20);
+        fitness += -sin(position[i]) * pow(sin(((i + 1) * position[i] * position[i]) / M_PI), 20);
     }
     return fitness;
 }
