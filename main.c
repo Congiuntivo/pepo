@@ -77,10 +77,13 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
         FitnessRank global_best;
         MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
-        /* Broadcast the best agent’s position from the process that had it */
-        MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
-        /* Update best agent's fitness based on the broadcast position */
-        space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+        if (global_best.fitness < space->best_agent.fitness)
+        {
+            /* Broadcast the best agent’s position from the process that had it */
+            MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+            /* Update best agent's fitness based on the broadcast position */
+            space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+        }
 
         /* Root process prints and logs the current best fitness */
         if (rank == 0)
@@ -91,6 +94,25 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
 
         /* Update the EPO algorithm state */
         epo_update(epo, space);
+    }
+
+    // Synchronize the best agent's position among all processes
+
+    /* Prepare local best info for global reduction */
+    FitnessRank local_best;
+    local_best.fitness = space->best_agent.fitness;
+    local_best.rank = rank;
+
+    /* Global reduction to find the overall best agent (lowest fitness) */
+    FitnessRank global_best;
+    MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+
+    if (global_best.fitness < space->best_agent.fitness)
+    {
+        /* Broadcast the best agent’s position from the process that had it */
+        MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+        /* Update best agent's fitness based on the broadcast position */
+        space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
     }
 }
 
