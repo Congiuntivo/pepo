@@ -1,6 +1,6 @@
 # Compiler and flags
 CC = mpicc
-CFLAGS = -Wall -Wextra -std=c99 -lm -Wno-unused-function
+CFLAGS = -Wall -Wextra -std=c99 -lm -fopenmp -Wno-unused-function
 INC = -I lib
 
 # Targets
@@ -26,7 +26,7 @@ all: $(TARGET)
 
 # Build the target
 $(TARGET): $(BUILD_DIR) $(OBJECTS)
-	$(CC) $(OBJECTS) -o $(TARGET) $(CFLAGS) $(INC)
+	$(CC) $(OBJECTS) -o $(TARGET) $(INC) $(CFLAGS) 
 
 # Create the build directory if it doesn't exist
 $(BUILD_DIR):
@@ -41,10 +41,12 @@ $(BUILD_DIR)/%.o: lib/%.c | $(BUILD_DIR)
 $(BUILD_DIR)/%.o: %.c | $(BUILD_DIR)
 	$(CC) $(CFLAGS) $(INC) -c $< -o $@
 
-# Run the program with a user-defined number of processes
-NPROCS ?= 4  # Default to 4 processes if not specified
+# Run the program with a user-defined number of processes and OpenMP threads
+NPROCS ?= 4  # Default to 4 MPI processes if not specified
+NTHREADS ?= 4  # Default to 4 OpenMP threads if not specified
+
 run: $(TARGET)
-	mpirun -np $(NPROCS) ./$(TARGET) $(ARGS)
+	OMP_NUM_THREADS=$(NTHREADS) mpirun -np $(NPROCS) ./$(TARGET) $(ARGS)
 
 # Clean up object files and executable
 clean:
@@ -52,4 +54,4 @@ clean:
 	rm -rf $(BUILD_DIR)
 
 # Phony targets
-.PHONY: all clean
+.PHONY: all clean run

@@ -77,10 +77,13 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
         FitnessRank global_best;
         MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
-        /* Broadcast the best agent’s position from the process that had it */
-        MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
-        /* Update best agent's fitness based on the broadcast position */
-        space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+        if (global_best.fitness < space->best_agent.fitness)
+        {
+            /* Broadcast the best agent’s position from the process that had it */
+            MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+            /* Update best agent's fitness based on the broadcast position */
+            space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+        }
 
         /* Root process prints and logs the current best fitness */
         if (rank == 0)
@@ -92,11 +95,33 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
         /* Update the EPO algorithm state */
         epo_update(epo, space);
     }
+
+    // Synchronize the best agent's position among all processes
+
+    /* Prepare local best info for global reduction */
+    FitnessRank local_best;
+    local_best.fitness = space->best_agent.fitness;
+    local_best.rank = rank;
+
+    /* Global reduction to find the overall best agent (lowest fitness) */
+    FitnessRank global_best;
+    MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
+
+    if (global_best.fitness < space->best_agent.fitness)
+    {
+        /* Broadcast the best agent’s position from the process that had it */
+        MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+        /* Update best agent's fitness based on the broadcast position */
+        space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+    }
 }
 
 int main(int argc, char *argv[])
 {
     int rank, comm_size;
+    clock_t start, end;
+
+    start = clock();
 
     /* Initialize MPI */
     MPI_Init(&argc, &argv);
@@ -120,9 +145,6 @@ int main(int argc, char *argv[])
     if (rank < (params.n_agents % comm_size))
         local_n_agents++;
 
-    /* Seed the random number generator uniquely per process */
-    srand((unsigned int)time(NULL) + rank);
-
     /* === Setup CSV Logging on the Root Process === */
     FILE *csv_file = NULL;
     if (rank == 0)
@@ -136,6 +158,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    clock_t init_start, init_end;
+    init_start = clock();
+
     /* === Initialize Search Space and EPO Algorithm Structures === */
     Space space;
     init_space(&space, local_n_agents, params.n_variables, params.lower_bound, params.upper_bound);
@@ -143,11 +168,21 @@ int main(int argc, char *argv[])
     EPO epo;
     init_epo(&epo, params.R, params.M, params.f, params.l, params.n_iterations, params.scale);
 
+    init_end = clock();
+
     /* Select the fitness function to use (change as desired) */
     double (*fitness_function)(double *, int) = michealewicz_function;
 
+    clock_t opt_start, opt_end;
+    opt_start = clock();
+
     /* === Run the Optimization Loop === */
     optimize(params.n_iterations, params.n_variables, &space, &epo, fitness_function, csv_file, rank);
+
+    opt_end = clock();
+
+    free_space(&space);
+    MPI_Finalize();
 
     /* === Final Output and Cleanup === */
     if (rank == 0)
@@ -155,10 +190,17 @@ int main(int argc, char *argv[])
         printf("Best agent found:\n");
         printf("Fitness: %.6f\n", space.best_agent.fitness);
         csv_close(csv_file);
-    }
 
-    free_space(&space);
-    MPI_Finalize();
+        end = clock();
+
+        double init_time = (double)(init_end - init_start) / CLOCKS_PER_SEC;
+        double opt_time = (double)(opt_end - opt_start) / CLOCKS_PER_SEC;
+        double total_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+        printf("Initialization time: %.6f seconds\n", init_time);
+        printf("Optimization time: %.6f seconds\n", opt_time);
+        printf("Total time: %.6f seconds\n", total_time);
+    }
     return 0;
 }
 
