@@ -120,9 +120,6 @@ int main(int argc, char *argv[])
     if (rank < (params.n_agents % comm_size))
         local_n_agents++;
 
-    /* Seed the random number generator uniquely per process */
-    srand((unsigned int)time(NULL) + rank);
-
     /* === Setup CSV Logging on the Root Process === */
     FILE *csv_file = NULL;
     if (rank == 0)
