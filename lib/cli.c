@@ -38,6 +38,13 @@ void read_cli(int argc, char *argv[], Parameters *params)
 {
     set_default_parameters(params);
 
+    // If only one argument is passed and it is help
+    if (argc == 2 && (strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0))
+    {
+        print_help(argv[0], params);
+        exit(0);
+    }
+
     for (int i = 1; i < argc - 1; i += 2)
     {
         if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0)
