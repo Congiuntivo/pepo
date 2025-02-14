@@ -97,6 +97,9 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
 int main(int argc, char *argv[])
 {
     int rank, comm_size;
+    clock_t start, end;
+
+    start = clock();
 
     /* Initialize MPI */
     MPI_Init(&argc, &argv);
@@ -133,6 +136,9 @@ int main(int argc, char *argv[])
         }
     }
 
+    clock_t init_start, init_end;
+    init_start = clock();
+
     /* === Initialize Search Space and EPO Algorithm Structures === */
     Space space;
     init_space(&space, local_n_agents, params.n_variables, params.lower_bound, params.upper_bound);
@@ -140,11 +146,21 @@ int main(int argc, char *argv[])
     EPO epo;
     init_epo(&epo, params.R, params.M, params.f, params.l, params.n_iterations, params.scale);
 
+    init_end = clock();
+
     /* Select the fitness function to use (change as desired) */
     double (*fitness_function)(double *, int) = michealewicz_function;
 
+    clock_t opt_start, opt_end;
+    opt_start = clock();
+
     /* === Run the Optimization Loop === */
     optimize(params.n_iterations, params.n_variables, &space, &epo, fitness_function, csv_file, rank);
+
+    opt_end = clock();
+
+    free_space(&space);
+    MPI_Finalize();
 
     /* === Final Output and Cleanup === */
     if (rank == 0)
@@ -152,10 +168,17 @@ int main(int argc, char *argv[])
         printf("Best agent found:\n");
         printf("Fitness: %.6f\n", space.best_agent.fitness);
         csv_close(csv_file);
-    }
 
-    free_space(&space);
-    MPI_Finalize();
+        end = clock();
+
+        double init_time = (double)(init_end - init_start) / CLOCKS_PER_SEC;
+        double opt_time = (double)(opt_end - opt_start) / CLOCKS_PER_SEC;
+        double total_time = (double)(end - start) / CLOCKS_PER_SEC;
+
+        printf("Initialization time: %.6f seconds\n", init_time);
+        printf("Optimization time: %.6f seconds\n", opt_time);
+        printf("Total time: %.6f seconds\n", total_time);
+    }
     return 0;
 }
 
