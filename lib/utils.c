@@ -1,14 +1,27 @@
 #include "utils.h"
 #include "csv.h"
+#include <omp.h>
+#include <stdlib.h>
 
 // Helper function to format the positions of the agents into a single string
 void format_position_string(char *position_str, size_t position_str_size, const double *position, int n_variables);
 
+#define MAX_THREADS 50
 
-// Generate random double between `lower` and `upper`
+static unsigned int seeds[MAX_THREADS]; // Array of seeds for each thread
+
+// Generate a thread-safe random double between `lower` and `upper`
 double random_double(double lower, double upper)
 {
-    return ((double)rand() / RAND_MAX) * (upper - lower) + lower;
+    int thread_num = omp_get_thread_num();
+    seeds[thread_num] += thread_num;         // Update seed for thread
+    unsigned int *seed = &seeds[thread_num]; // Reference to per-thread seed
+
+    int r_num = rand_r(seed);
+    // Set the random number as seed for the next iteration
+    seeds[thread_num] = r_num;
+
+    return lower + (upper - lower) * ((double)r_num / RAND_MAX);
 }
 
 // Logs the population to a CSV file
