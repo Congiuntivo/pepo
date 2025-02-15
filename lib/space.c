@@ -55,3 +55,19 @@ void update_best_agent(Space *space, double (*fitness_function)(double *, int))
         }
     }
 }
+
+Agent *get_best_agent(Space *space, double (*fitness_function)(double *, int))
+{
+    int best_agent_index = 0;
+    double best_fitness = fitness_function(space->agents[0].position, space->n_variables);
+    for (int i = 1; i < space->n_agents; i++)
+    {
+        space->agents[i].fitness = fitness_function(space->agents[i].position, space->n_variables);
+        if (space->agents[i].fitness < best_fitness)
+        {
+            best_fitness = space->agents[i].fitness;
+            best_agent_index = i;
+        }
+    }
+    return &space->agents[best_agent_index];
+}
