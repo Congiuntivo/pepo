@@ -60,7 +60,7 @@ static void create_parameters_type(MPI_Datatype *param_type)
  * among all processes via MPI_Allreduce/MPI_Bcast, logs progress, and
  * performs the EPO update.
  */
-static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
+static void optimize(int n_iterations, Space *space, EPO *epo,
                      double (*fitness_function)(double *, int), FILE *csv_file, int rank)
 {
     // Synchronize the best agent's position among all processes
@@ -74,8 +74,8 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
     FitnessRank global_best;
     MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
-    MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
-    space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+    MPI_Bcast(space->best_agent.position, space->n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+    space->best_agent.fitness = global_best.fitness;
 
     for (int iteration = 1; iteration <= n_iterations; iteration++)
     {
@@ -83,12 +83,9 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
         Agent *local_best_agent = get_best_agent(space, fitness_function);
 
         /* Prepare local best info for global reduction */
-        FitnessRank local_best;
         local_best.fitness = local_best_agent->fitness;
-        local_best.rank = rank;
 
         /* Global reduction to find the overall best agent (lowest fitness) */
-        FitnessRank global_best;
         MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
         if (global_best.fitness < space->best_agent.fitness)
@@ -96,13 +93,13 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
             if (rank == global_best.rank)
             {
                 /* Update the best agent in the space */
-                memcpy(space->best_agent.position, local_best_agent->position, n_variables * sizeof(double));
+                memcpy(space->best_agent.position, local_best_agent->position, space->n_variables * sizeof(double));
             }
 
             /* Broadcast the best agent’s position from the process that had it */
-            MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+            MPI_Bcast(space->best_agent.position, space->n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
             /* Update best agent's fitness based on the broadcast position */
-            space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+            space->best_agent.fitness = fitness_function(space->best_agent.position, space->n_variables);
         }
 
         /* Root process prints and logs the current best fitness */
@@ -116,15 +113,25 @@ static void optimize(int n_iterations, int n_variables, Space *space, EPO *epo,
         epo_update(epo, space);
     }
 
+    Agent *local_best_agent = get_best_agent(space, fitness_function);
+
+    local_best.fitness = local_best_agent->fitness;
+
     // Synchronize the best agent's position among all processes
     MPI_Allreduce(&local_best, &global_best, 1, MPI_DOUBLE_INT, MPI_MINLOC, MPI_COMM_WORLD);
 
     if (global_best.fitness < space->best_agent.fitness)
     {
+        if (rank == global_best.rank)
+        {
+            /* Update the best agent in the space */
+            memcpy(space->best_agent.position, local_best_agent->position, space->n_variables * sizeof(double));
+        }
+
         /* Broadcast the best agent’s position from the process that had it */
-        MPI_Bcast(space->best_agent.position, n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
+        MPI_Bcast(space->best_agent.position, space->n_variables, MPI_DOUBLE, global_best.rank, MPI_COMM_WORLD);
         /* Update best agent's fitness based on the broadcast position */
-        space->best_agent.fitness = fitness_function(space->best_agent.position, n_variables);
+        space->best_agent.fitness = fitness_function(space->best_agent.position, space->n_variables);
     }
 }
 
@@ -191,7 +198,7 @@ int main(int argc, char *argv[])
     opt_start = clock();
 
     /* === Run the Optimization Loop === */
-    optimize(params.n_iterations, params.n_variables, &space, &epo, fitness_function, csv_file, rank);
+    optimize(params.n_iterations, &space, &epo, fitness_function, csv_file, rank);
 
     opt_end = clock();
 
