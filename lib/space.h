@@ -25,4 +25,7 @@ void free_space(Space *space);
 // Update the best agent in the search space
 void update_best_agent(Space *space, double (*fitness_function)(double *, int));
 
+// Get the best agent in the search space
+Agent *get_best_agent(Space *space, double (*fitness_function)(double *, int));
+
 #endif
