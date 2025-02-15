@@ -10,18 +10,21 @@ void format_position_string(char *position_str, size_t position_str_size, const 
 
 static unsigned int seeds[MAX_THREADS]; // Array of seeds for each thread
 
+void init_seeds(int seed)
+{
+    for (int i = 0; i < MAX_THREADS; i++)
+    {
+        seeds[i] = i + seed + time(NULL);
+    }
+}
+
 // Generate a thread-safe random double between `lower` and `upper`
 double random_double(double lower, double upper)
 {
     int thread_num = omp_get_thread_num();
-    seeds[thread_num] += thread_num;         // Update seed for thread
     unsigned int *seed = &seeds[thread_num]; // Reference to per-thread seed
 
-    int r_num = rand_r(seed);
-    // Set the random number as seed for the next iteration
-    seeds[thread_num] = r_num;
-
-    return lower + (upper - lower) * ((double)r_num / RAND_MAX);
+    return lower + (upper - lower) * ((double)rand_r(seed) / RAND_MAX);
 }
 
 // Logs the population to a CSV file
