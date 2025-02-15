@@ -27,6 +27,17 @@ A parallel implementation in C with OpenMP and MPI of the Emperor Penguin Optimi
 
 ## Algorithm Behavior
 
+### Emperor Penguin Optimization (EPO) Algorithm
+
+EPO is a bio-inspired metaheuristic optimization algorithm that simulates the huddling behavior of emperor penguins in Antarctica to survive extreme cold. The algorithm consists of several key phases:
+
+1. **Huddle Formation** - Penguins group together to conserve heat, representing the initial population of candidate solutions.
+2. **Temperature Calculation** - A temperature profile is assigned to each penguin based on its position, influencing movement.
+3. **Distance Computation** - The relative distances between penguins are used to balance exploration and exploitation.
+4. **Effective Mover Selection** - The best solution is identified, and other penguins adjust their positions accordingly.
+
+The algorithm mathematically models these behaviors to optimize complex engineering problems efficiently.
+
 ### Social Force
 
 The social force is calculated as follows:
