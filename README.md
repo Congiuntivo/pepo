@@ -16,6 +16,8 @@ A parallel implementation in C with OpenMP and MPI of the Emperor Penguin Optimi
 │   ├── csv.h          // Handles CSV logging
 │   ├── epo.c
 │   ├── epo.h          // Contains a dedicated struct and optimization algorithm
+│   ├── f_functions.c
+│   ├── f_functions.h  // Contains the fitness benchmark functions
 │   ├── space.c
 │   ├── space.h        // Struct that represents the space (list of agents and bounds)
 │   ├── utils.c
@@ -85,21 +87,22 @@ The project includes a `Makefile` with the following rules:
 
 The executable supports various command-line arguments:
 
-```sh
-./epo.out -h            
+```
+./epo.out -h
 Usage: ./epo.out [-p N] [-v N] [-i N] [-lb N] [-ub N] [-f N] [-l N] [-R N] [-M N] [-s N]
 Options:
-    -p,   --penguins       Number of penguins (default: 80)
-    -v,   --variables      Number of variables (default: 3)
-    -i,   --iterations     Number of iterations (default: 100)
-    -lb,  --lower_bound    Lower bound of search space (default: -100.000000)
-    -ub,  --upper_bound    Upper bound of search space (default: 100.000000)
-    -f                     Exploration control parameter (default: 2.000000)
-    -l                     Exploitation control parameter (default: 1.500000)
-    -R,   --radius         Huddle radius (default: 0.500000)
-    -M                     Movement parameter (default: 2.000000)
-    -s,   --scale          Scale factor (default: 1.000000)
-    -h,   --help           Display this help message
+	-p,   --penguins       Number of penguins (default: 80)
+	-v,   --variables      Number of variables (default: 3)
+	-i,   --iterations     Number of iterations (default: 100)
+	-lb,  --lower_bound    Lower bound of search space (default: -100.000000)
+	-ub,  --upper_bound    Upper bound of search space (default: 100.000000)
+	-f                     Exploration control parameter (default: 2.000000)
+	-l                     Exploitation control parameter (default: 1.500000)
+	-R,   --radius         Huddle radius (default: 0.500000)
+	-M                     Movement parameter (default: 2.000000)
+	-s,   --scale          Scale factor (default: 1.000000)
+	-ff,  --fitness        Fitness function (default: sphere) [sphere, matyas, bukin, mccormick, michealewicz]
+	-h,   --help           Display this help message
 ```
 
 ### Parallel Execution
