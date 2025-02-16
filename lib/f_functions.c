@@ -46,6 +46,10 @@ double bukin_function(double *position, int n_variables)
 {
     if (n_variables < 2)
         return 0.0; // Requires at least 2 dimensions
+    if (position[0] < -15.0 || position[0] > -5.0) // Domain of the function
+        return 1000.0;
+    if (position[1] < -3.0 || position[1] > 3.0)
+        return 1000.0;
     double x = position[0], y = position[1];
     return 100.0 * sqrt(fabs(y - 0.01 * x * x)) + 0.01 * fabs(x + 10.0);
 }
