@@ -40,7 +40,7 @@ void print_help(const char *program_name, const Parameters *params)
     printf("\t-R,   --radius         Huddle radius (default: %f)\n", params->R);
     printf("\t-M                     Movement parameter (default: %f)\n", params->M);
     printf("\t-s,   --scale          Scale factor (default: %f)\n", params->scale);
-    prinf("\t-ff,   --fitness        Fitness function (default: %s) [%s, %s, %s, %s, %s]\n", SPHERE, SPHERE, MATYAS, BUKIN, MCCORMICK, MICHEALEWICZ);
+    printf("\t-ff,   --fitness        Fitness function (default: %s) [%s, %s, %s, %s, %s]\n", SPHERE, SPHERE, MATYAS, BUKIN, MCCORMICK, MICHEALEWICZ);
     printf("\t-h,   --help           Display this help message\n");
 }
 
@@ -132,3 +132,4 @@ void read_cli(int argc, char *argv[], Parameters *params)
             }
         }
     }
+}
