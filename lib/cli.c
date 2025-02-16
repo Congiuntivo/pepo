@@ -3,13 +3,6 @@
 #include <string.h>
 
 #include "cli.h"
-#include "f_functions.h"
-
-#define SPHERE "sphere"
-#define MATYAS "matyas"
-#define BUKIN "bukin"
-#define MCCORMICK "mccormick"
-#define MICHEALEWICZ "michealewicz"
 
 void set_default_parameters(Parameters *params)
 {
@@ -23,7 +16,7 @@ void set_default_parameters(Parameters *params)
     params->R = 0.5;
     params->M = 2.0;
     params->scale = 1.0;
-    params->fitness_function = sphere_function;
+    strcpy(params->fitness_function, SPHERE);
 }
 
 void print_help(const char *program_name, const Parameters *params)
@@ -107,23 +100,23 @@ void read_cli(int argc, char *argv[], Parameters *params)
 
             if (strcmp(argv[i + 1], SPHERE) == 0)
             {
-                params->fitness_function = sphere_function;
+                strcpy(params->fitness_function, SPHERE);
             }
             else if (strcmp(argv[i + 1], MATYAS) == 0)
             {
-                params->fitness_function = matyas_function;
+                strcpy(params->fitness_function, MATYAS);
             }
             else if (strcmp(argv[i + 1], BUKIN) == 0)
             {
-                params->fitness_function = bukin_function;
+                strcpy(params->fitness_function, BUKIN);
             }
             else if (strcmp(argv[i + 1], MCCORMICK) == 0)
             {
-                params->fitness_function = mccormick_function;
+                strcpy(params->fitness_function, MCCORMICK);
             }
             else if (strcmp(argv[i + 1], MICHEALEWICZ) == 0)
             {
-                params->fitness_function = michealewicz_function;
+                strcpy(params->fitness_function, MICHEALEWICZ);
             }
             else
             {

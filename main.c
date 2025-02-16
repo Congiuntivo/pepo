@@ -5,13 +5,12 @@
 #include <stddef.h> // for offsetof
 #include <mpi.h>
 
-
 #include "space.h"
 #include "epo.h"
 #include "utils.h"
 #include "csv.h"
 #include "cli.h"
-
+#include "f_functions.h"
 
 /* === Helper Structure for MPI Reduction (fitness, rank) === */
 typedef struct
@@ -23,8 +22,8 @@ typedef struct
 /* === Create Custom MPI Datatype for Parameters Struct === */
 static void create_parameters_type(MPI_Datatype *param_type)
 {
-    int blocklengths[10] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
-    MPI_Aint offsets[10];
+    int blocklengths[11] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, MAX_FUN_NAME_LEN};
+    MPI_Aint offsets[11];
     offsets[0] = offsetof(Parameters, n_agents);
     offsets[1] = offsetof(Parameters, n_variables);
     offsets[2] = offsetof(Parameters, n_iterations);
@@ -35,12 +34,14 @@ static void create_parameters_type(MPI_Datatype *param_type)
     offsets[7] = offsetof(Parameters, R);
     offsets[8] = offsetof(Parameters, M);
     offsets[9] = offsetof(Parameters, scale);
+    offsets[10] = offsetof(Parameters, fitness_function);
 
-    MPI_Datatype types[10] = {MPI_INT, MPI_INT, MPI_INT,
+
+    MPI_Datatype types[11] = {MPI_INT, MPI_INT, MPI_INT,
                               MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE,
-                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE};
+                              MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_DOUBLE, MPI_CHAR};
 
-    MPI_Type_create_struct(10, blocklengths, offsets, types, param_type);
+    MPI_Type_create_struct(11, blocklengths, offsets, types, param_type);
     MPI_Type_commit(param_type);
 }
 
@@ -51,7 +52,7 @@ static void create_parameters_type(MPI_Datatype *param_type)
  * performs the EPO update.
  */
 static void optimize(int n_iterations, Space *space, EPO *epo,
-                     double (*fitness_function)(double *, int), FILE *csv_file, int rank)
+                     fitness_function_t fitness_function, FILE *csv_file, int rank)
 {
     // Synchronize the best agent's position among all processes
 
@@ -151,6 +152,8 @@ int main(int argc, char *argv[])
     MPI_Bcast(&params, 1, MPI_PARAMS, 0, MPI_COMM_WORLD);
     MPI_Type_free(&MPI_PARAMS);
 
+    fitness_function_t fitness_function = get_fitness_function(params.fitness_function);
+
     /* Calculate the number of agents assigned to this process */
     int local_n_agents = params.n_agents / comm_size;
     if (rank < (params.n_agents % comm_size))
@@ -211,4 +214,3 @@ int main(int argc, char *argv[])
     }
     return 0;
 }
-

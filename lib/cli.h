@@ -1,6 +1,9 @@
 #ifndef CLI_H
 #define CLI_H
 
+
+#define MAX_FUN_NAME_LEN 50
+
 /* === Parameters Structure for CLI Options === */
 typedef struct
 {
@@ -14,7 +17,7 @@ typedef struct
     double R;
     double M;
     double scale;
-    double (*fitness_function)(double *, int);
+    char fitness_function[MAX_FUN_NAME_LEN];
 } Parameters;
 
 // Read command line arguments

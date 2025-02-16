@@ -1,11 +1,28 @@
 #include "f_functions.h"
 #include <math.h>
+#include <string.h>
 
 #ifndef M_PI
 #define M_PI 3.14159265358979323846
 #endif
 
 /* === Fitness Function Implementations === */
+
+// Funcion to get a function pointer based on the name of the function
+fitness_function_t get_fitness_function(const char *name)
+{
+    if (strcmp(name, "sphere") == 0)
+        return sphere_function;
+    if (strcmp(name, "matyas") == 0)
+        return matyas_function;
+    if (strcmp(name, "bukin") == 0)
+        return bukin_function;
+    if (strcmp(name, "mccormick") == 0)
+        return mccormick_function;
+    if (strcmp(name, "michealewicz") == 0)
+        return michealewicz_function;
+    return NULL;
+}
 
 double sphere_function(double *position, int n_variables)
 {
