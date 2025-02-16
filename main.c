@@ -4,6 +4,7 @@
 #include <string.h>
 #include <stddef.h> // for offsetof
 #include <mpi.h>
+#include <omp.h>
 
 #include "space.h"
 #include "epo.h"
@@ -129,9 +130,9 @@ static void optimize(int n_iterations, Space *space, EPO *epo,
 int main(int argc, char *argv[])
 {
     int rank, comm_size;
-    clock_t start, end;
+    double start, end;
 
-    start = clock();
+    start = omp_get_wtime();
 
     /* Initialize MPI */
     MPI_Init(&argc, &argv);
@@ -172,8 +173,8 @@ int main(int argc, char *argv[])
         }
     }
 
-    clock_t init_start, init_end;
-    init_start = clock();
+    double init_start, init_end;
+    init_start = omp_get_wtime();
 
     /* === Initialize Search Space and EPO Algorithm Structures === */
     Space space;
@@ -182,15 +183,15 @@ int main(int argc, char *argv[])
     EPO epo;
     init_epo(&epo, params.R, params.M, params.f, params.l, params.n_iterations, params.scale);
 
-    init_end = clock();
+    init_end = omp_get_wtime();
 
-    clock_t opt_start, opt_end;
-    opt_start = clock();
+    double opt_start, opt_end;
+    opt_start = omp_get_wtime();
 
     /* === Run the Optimization Loop === */
     optimize(params.n_iterations, &space, &epo, fitness_function, csv_file, rank);
 
-    opt_end = clock();
+    opt_end = omp_get_wtime();
 
     free_space(&space);
     MPI_Finalize();
@@ -202,11 +203,11 @@ int main(int argc, char *argv[])
         printf("Fitness: %.6f\n", space.best_agent.fitness);
         csv_close(csv_file);
 
-        end = clock();
+        end = omp_get_wtime();
 
-        double init_time = (double)(init_end - init_start) / CLOCKS_PER_SEC;
-        double opt_time = (double)(opt_end - opt_start) / CLOCKS_PER_SEC;
-        double total_time = (double)(end - start) / CLOCKS_PER_SEC;
+        double init_time = (double)(init_end - init_start);
+        double opt_time = (double)(opt_end - opt_start);
+        double total_time = (double)(end - start);
 
         printf("Initialization time: %.6f seconds\n", init_time);
         printf("Optimization time: %.6f seconds\n", opt_time);
