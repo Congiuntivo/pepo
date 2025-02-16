@@ -2,13 +2,9 @@
 #include <stdlib.h>
 #include <time.h>
 #include <string.h>
-#include <math.h>
 #include <stddef.h> // for offsetof
 #include <mpi.h>
 
-#ifndef M_PI
-#define M_PI 3.14159265358979323846
-#endif
 
 #include "space.h"
 #include "epo.h"
@@ -16,12 +12,6 @@
 #include "csv.h"
 #include "cli.h"
 
-/* === Fitness Function Prototypes === */
-static double sphere_function(double *position, int n_variables);
-static double matyas_function(double *position, int n_variables);
-static double bukin_function(double *position, int n_variables);
-static double mccormick_function(double *position, int n_variables);
-static double michealewicz_function(double *position, int n_variables);
 
 /* === Helper Structure for MPI Reduction (fitness, rank) === */
 typedef struct
@@ -191,14 +181,11 @@ int main(int argc, char *argv[])
 
     init_end = clock();
 
-    /* Select the fitness function to use (change as desired) */
-    double (*fitness_function)(double *, int) = michealewicz_function;
-
     clock_t opt_start, opt_end;
     opt_start = clock();
 
     /* === Run the Optimization Loop === */
-    optimize(params.n_iterations, &space, &epo, fitness_function, csv_file, rank);
+    optimize(params.n_iterations, &space, &epo, params.fitness_function, csv_file, rank);
 
     opt_end = clock();
 
@@ -225,48 +212,3 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-/* === Fitness Function Implementations === */
-
-static double sphere_function(double *position, int n_variables)
-{
-    double fitness = 0.0;
-    for (int i = 0; i < n_variables; i++)
-    {
-        fitness += position[i] * position[i];
-    }
-    return fitness;
-}
-
-static double matyas_function(double *position, int n_variables)
-{
-    if (n_variables < 2)
-        return 0.0; // Requires at least 2 dimensions
-    double x = position[0], y = position[1];
-    return 0.26 * (x * x + y * y) - 0.48 * (x * y);
-}
-
-static double bukin_function(double *position, int n_variables)
-{
-    if (n_variables < 2)
-        return 0.0; // Requires at least 2 dimensions
-    double x = position[0], y = position[1];
-    return 100.0 * sqrt(fabs(y - 0.01 * x * x)) + 0.01 * fabs(x + 10.0);
-}
-
-static double mccormick_function(double *position, int n_variables)
-{
-    if (n_variables < 2)
-        return 0.0; // Requires at least 2 dimensions
-    double x = position[0], y = position[1];
-    return sin(x + y) + (x - y) * (x - y) - 1.5 * x + 2.5 * y + 1.0;
-}
-
-static double michealewicz_function(double *position, int n_variables)
-{
-    double fitness = 0.0;
-    for (int i = 0; i < n_variables; i++)
-    {
-        fitness += -sin(position[i]) * pow(sin(((i + 1) * position[i] * position[i]) / M_PI), 20);
-    }
-    return fitness;
-}

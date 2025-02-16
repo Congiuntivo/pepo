@@ -14,6 +14,7 @@ typedef struct
     double R;
     double M;
     double scale;
+    double (*fitness_function)(double *, int);
 } Parameters;
 
 // Read command line arguments
