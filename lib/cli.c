@@ -3,6 +3,7 @@
 #include <string.h>
 
 #include "cli.h"
+#include "f_functions.h"
 
 void set_default_parameters(Parameters *params)
 {

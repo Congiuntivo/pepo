@@ -3,7 +3,7 @@
 
 typedef double (*fitness_function_t)(double *, int);
 
-fitness_function_t get_fitness_function(const char *name)
+fitness_function_t get_fitness_function(const char *name);
 
 /* === Fitness Function Prototypes === */
 double matyas_function(double *position, int n_variables);

@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     opt_start = clock();
 
     /* === Run the Optimization Loop === */
-    optimize(params.n_iterations, &space, &epo, params.fitness_function, csv_file, rank);
+    optimize(params.n_iterations, &space, &epo, fitness_function, csv_file, rank);
 
     opt_end = clock();
 

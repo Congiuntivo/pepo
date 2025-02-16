@@ -1,8 +1,7 @@
 #ifndef CLI_H
 #define CLI_H
 
-
-#define MAX_FUN_NAME_LEN 50
+#include "f_functions.h"
 
 /* === Parameters Structure for CLI Options === */
 typedef struct
