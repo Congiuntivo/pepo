@@ -1,7 +1,9 @@
-#include "cli.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+#include "cli.h"
+#include "f_functions.h"
 
 void set_default_parameters(Parameters *params)
 {
@@ -15,6 +17,7 @@ void set_default_parameters(Parameters *params)
     params->R = 0.5;
     params->M = 2.0;
     params->scale = 1.0;
+    strcpy(params->fitness_function, SPHERE);
 }
 
 void print_help(const char *program_name, const Parameters *params)
@@ -31,6 +34,7 @@ void print_help(const char *program_name, const Parameters *params)
     printf("\t-R,   --radius         Huddle radius (default: %f)\n", params->R);
     printf("\t-M                     Movement parameter (default: %f)\n", params->M);
     printf("\t-s,   --scale          Scale factor (default: %f)\n", params->scale);
+    printf("\t-ff,   --fitness        Fitness function (default: %s) [%s, %s, %s, %s, %s]\n", SPHERE, SPHERE, MATYAS, BUKIN, MCCORMICK, MICHEALEWICZ);
     printf("\t-h,   --help           Display this help message\n");
 }
 
@@ -91,6 +95,35 @@ void read_cli(int argc, char *argv[], Parameters *params)
         else if (strcmp(argv[i], "-s") == 0 || strcmp(argv[i], "--scale") == 0)
         {
             params->scale = atof(argv[i + 1]);
+        }
+        else if (strcmp(argv[i], "-ff") == 0 || strcmp(argv[i], "--fitness") == 0)
+        {
+
+            if (strcmp(argv[i + 1], SPHERE) == 0)
+            {
+                strcpy(params->fitness_function, SPHERE);
+            }
+            else if (strcmp(argv[i + 1], MATYAS) == 0)
+            {
+                strcpy(params->fitness_function, MATYAS);
+            }
+            else if (strcmp(argv[i + 1], BUKIN) == 0)
+            {
+                strcpy(params->fitness_function, BUKIN);
+            }
+            else if (strcmp(argv[i + 1], MCCORMICK) == 0)
+            {
+                strcpy(params->fitness_function, MCCORMICK);
+            }
+            else if (strcmp(argv[i + 1], MICHEALEWICZ) == 0)
+            {
+                strcpy(params->fitness_function, MICHEALEWICZ);
+            }
+            else
+            {
+                fprintf(stderr, "Invalid fitness function: %s\n", argv[i + 1]);
+                exit(1);
+            }
         }
     }
 }
