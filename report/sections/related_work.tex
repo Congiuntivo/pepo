@@ -1,0 +1,12 @@
+\section{Related Work}
+
+There is no evidence of the implementation of parallelization strategies for the EPO algorithm, although the problem of parallelization in the field of metaheuristics has been addressed throughout the years \cite{article}.
+These strategies generally focus on parallelizing different aspects of metaheuristic algorithms, including solution evaluation, population management, and search processes.   
+Parallelization strategies for metaheuristics can be broadly categorized into four main approaches: master-slave, island, cellular models, and hierarchical models. Each of these strategies aims to improve computational efficiency, scalability, and solution quality by distributing workload and enhancing search diversity.
+\begin{itemize}
+\item The \textbf{master-slave model}, also known as the farm model, is a straightforward approach where a central master process distributes computational tasks, such as fitness evaluations, to multiple worker processes.\newline
+\item The \textbf{island model} partitions the population into $k$ smaller subpopulations, or islands, each evolving independently with periodic exchanges of solutions after a defined number of generations $G$.  This approach enhances diversity and prevents premature convergence by allowing different evolutionary processes to explore various regions of the search space before sharing information.\newline
+\item The \textbf{cellular model} organizes solutions in a structured spatial layout, typically a $ d $-dimensional grid, where interactions occur locally. \newline
+\item The \textbf{hierarchical model} combines multiple levels of parallelism, such as using an island model at a high level while employing master-slave or cellular models within each island. 
+\end{itemize}
+Beyond these primary models, hybrid and more complex parallelization strategies have been developed \cite{GONG2015286}, integrating elements from multiple approaches and incorporating adaptive mechanisms to optimize performance across different problem domains. 
