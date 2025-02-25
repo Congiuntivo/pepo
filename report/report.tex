@@ -12,7 +12,8 @@
 \usepackage{biblatex}                  % For bibliography management
 \usepackage{algorithm}
 \usepackage{algpseudocode}
-
+\usepackage{multicol}
+\usepackage{subcaption}                % For subfigures
 
 \addbibresource{report.bib}        % Bibliography file
 
@@ -23,24 +24,49 @@
 \input{titlepage.tex}  % Include the title page
 
 % Sections of the report
-\section{Abstract}
-Write your abstract here. A brief summary of the project. \cite{einstein1905}
+\begin{abstract}
+This study presents a parallel implementation of the Emperor Penguin Optimizer (EPO) algorithm, a bio-inspired metaheuristic developed for solving complex optimization problems. 
+
+We enhanced the original EPO algorithm by introducing scaling factors to prevent overshooting and improve solution distribution, then implemented parallelization strategies using both \textbf{MPI} and \textbf{OpenMP} to optimize performance on High-Performance Computing (HPC) clusters. 
+
+The algorithm's effectiveness was validated through comprehensive testing on standard benchmark functions, demonstrating the robustness of our implementation. Performance analysis revealed near-linear speedup with increasing node count and high efficiency, particularly for larger population sizes. 
+
+While the MPI implementation showed promising results, the OpenMP multithreading unexpectedly led to performance degradation, potentially due to memory-related issues.
+\end{abstract}
+
+
 
 \section{Introduction}
-Introduce the background, motivation, and objectives of the project.
 
+Emperor Penguins Optimization Algorithm (EPO) is a nature-inspired  metaheuristic 
+algorithm that takes inspiration from the huddling behavior of emperor penguins, which is a survival strategy to withstand the harsh
+Antarctic environment. The algorithm was introduced in 2019 by Dhiman and Kumar \cite{dhiman2018emperor} and has been successfully 
+applied to a wide range of optimization problems.
+
+In the context of optimization, metaheuristic algorithms are a class of optimization algorithms that are inspired by natural processes and phenomena. 
+These algorithms are typically used to find approximate solutions to complex optimization problems where traditional methods may be inefficient or infeasible. 
+Metaheuristic algorithms do not guarantee an optimal solution but aim to find a good enough solution within a reasonable amount of time. 
+Examples of metaheuristic algorithms include \textit{Genetic Algorithms} (GA), \textit{Particle Swarm Optimization} (PSO), \textit{Ant Colony Optimization} (ACO), and \textit{Simulated Annealing} (SA).
+These algorithms are characterized by their ability to explore and exploit the search space effectively, often using mechanisms such as selection, mutation, crossover, and local search to iteratively improve candidate solutions.
+In general population-based algorithms, parallelization can accelerate convergence, enhance exploration, and reduce the likelihood of getting trapped in local optima.\\
+This project aims to design and implement parallelization strategies for the Emperor Penguin Optimization Algorithm using and evaluating performance gains achieved through parallelization in terms of speedup, efficiency and scalability.
+
+
+\input{sections/related_work}
 \input{sections/metodology.tex}
+\input{sections/experimental_setup}
+\input{sections/experimental_results}
 
-\section{Results}
-Present the results of your project. This could include text, figures, tables, or any other relevant information.
-
-\section{Discussion}
-Interpret your results and discuss their significance.
 
 \section{Conclusion}
-Summarize your findings. Suggest future work or improvements that could be made.
+In conclusion, our parallelized algorithm has demonstrated strong efficiency in solving various optimization problems, showing a high degree of scalability and significant speedup when using multiprocess parallelization. However, our experiments revealed that multithreading did not yield performance improvements.
+\newline
+\newline
+Some limitations of this study include the relatively small number of simulations used for parallel performance assessment, which introduces variability in the results that could have been mitigated by conducting multiple runs. Additionally, our implementation relies heavily on dynamic memory allocation, which may have negatively impacted performance. Another challenge was the absence of an official, formal, and unambiguous description of the algorithm, leading us to base our implementation on unofficial sources. 
+\newline
+\\
+For future work, we suggest conducting multiple simulations to obtain more precise performance measurements and exploring the use of computationally expensive fitness functions to further evaluate scalability and efficiency.
 
-\section*{References}  % Section without a number
 \printbibliography    % Bibliography is printed here
 
 % End the document

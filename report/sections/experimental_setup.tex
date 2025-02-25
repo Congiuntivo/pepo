@@ -1,0 +1,92 @@
+\section{Experimental Setup}
+
+To evaluate the performance of the proposed algorithm, we conducted experiments on the High-Performance Computing (HPC) cluster at the University of Trento, which operates on the Altaris PBS Professional cluster management software.  
+This section provides a detailed description of the computational resources allocated, software environment and evaluation metrics. 
+
+
+\subsection{Computational Resources}  
+The following PBS resource request was used for our experiments:  
+\begin{multicols}{2}
+\begin{itemize}  
+    \item \textbf{Nodes:} 5  
+    \item \textbf{CPUs per Node:} 10  
+    \item \textbf{Memory per Node:} 2 GB  
+    \item \textbf{Operating System:} CentOS 7  
+\end{itemize}  
+\end{multicols}
+
+\subsection{Software and Compiler Configuration}
+To ensure efficient execution of the optimization algorithm, the following software and compiler configurations were used:
+\begin{multicols}{2}
+\begin{itemize}
+    \item \textbf{Programming Language:}  C
+    \item \textbf{Parallel Computing Frameworks:} \\ MPICH 4.1.1, OpenMP 3.1
+    \item \textbf{Compiler:} \\ GCC 4.8.5 with \texttt{-fopenmp} for OpenMP support
+    \item \textbf{MPI Compilation:} \\ \texttt{mpicc} (MPICH) with standard MPI flags
+    \item \textbf{Additional Libraries:} \\ Standard C math library (\texttt{libm})
+\end{itemize}  
+\end{multicols}
+
+
+\subsection{Evaluation Metrics}
+To assess the performance of the algorithm, we considered the following metrics:
+
+\subsubsection{Solution Accuracy}
+The accuracy of the obtained solution is measured as the difference between the final solution \( x_{\text{final}} \) and the global optimum \( x^* \):
+\begin{equation}
+    E = | f(x_{\text{final}}) - f(x^*) |
+\end{equation}
+
+\subsubsection{Speedup}
+Speedup measures the performance improvement gained by using a parallel program compared to a serial program. It is defined as:
+\begin{equation}
+    S(P) = \frac{T(1)}{T(P)}
+\end{equation}
+where:
+\begin{itemize}
+    \item \( T(1) \) is the execution time of the serial program.
+    \item \( T(P) \) is the execution time of the parallel program using \(P\) nodes.
+\end{itemize}
+In an ideal case, the speedup should be linear, meaning \( S(P) = P \), but due to communication overhead and synchronization, it is often sublinear.
+
+\subsubsection{Efficiency}
+Efficiency measures how well computational resources are utilized in a parallel system. It is defined as:
+\begin{equation}
+    E(P) = \frac{S(P)}{P} = \frac{T(1)}{P \cdot T(P)}
+\end{equation}
+where:
+\begin{itemize}
+    \item \( S(P) \) is the speedup.
+    \item \( P \) is the number of nodes.
+\end{itemize}
+Efficiency values range between \( 0 \) and \( 1 \), with \( E(P) = 1 \) indicating perfect efficiency.
+
+\subsubsection{Scalability}
+Scalability assesses how well the algorithm maintains efficiency when the problem size and number of nodes increase. It can be analyzed using two models:
+
+\paragraph{Strong Scalability}
+Strong scalability examines how execution time decreases when the number of cores increases, while keeping the problem size fixed. Ideally, if an algorithm scales perfectly, the execution time should decrease proportionally to \( P \). Strong scalability is defined as:
+\begin{equation}
+    S_{\text{strong}}(P) = \frac{T(1)}{T(P)}
+\end{equation}
+where:
+\begin{itemize}
+    \item \( T(1) \) is the execution time using a single node.
+    \item \( T(P) \) is the execution time using \( P \) nodes for the same problem size.
+\end{itemize}
+For perfect strong scalability, \( S_{\text{strong}}(P) = P \), but in practice, communication and synchronization overheads reduce the actual speedup.
+
+\paragraph{Weak Scalability}
+Weak scalability measures how well an algorithm maintains efficiency when both the number of nodes and problem size increase proportionally. It is defined as:
+\begin{equation}
+    S_{\text{weak}}(P) = \frac{T(N)}{T(P, N')}
+\end{equation}
+where:
+\begin{itemize}
+    \item \( T(N) \) is the execution time for problem size \( N \) using a single node.
+    \item \( T(P, N') \) is the execution time using \( P \) cores for problem size \( N' \), where \( N' = P \times N \).
+\end{itemize}
+An algorithm exhibits perfect weak scalability if \( S_{\text{weak}}(P) = 1 \), meaning the execution time remains constant as both problem size and node count increase proportionally.
+
+
+
